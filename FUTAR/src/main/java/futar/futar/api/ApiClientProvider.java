@@ -9,7 +9,9 @@ public class ApiClientProvider {
 
     public static ApiClient getClient() {
         ApiClient client = Configuration.getDefaultApiClient();
-        client.setBasePath(BASE_PATH);
+        client.setConnectTimeout(30_000);
+        client.setReadTimeout(30_000);
+        client.setWriteTimeout(30_000);        client.setBasePath(BASE_PATH);
         client.addDefaultHeader("key", API_KEY);
         return client;
     }

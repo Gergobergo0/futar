@@ -1,5 +1,6 @@
 package futar.futar.controller;
 import javafx.animation.PauseTransition;
+import javafx.event.ActionEvent;
 import javafx.util.Duration;
 
 import futar.futar.api.ApiClientProvider;
@@ -11,12 +12,17 @@ import futar.futar.view.DepartureViewBuilder;
 import javafx.application.Platform;
 import javafx.concurrent.Worker;
 import javafx.fxml.FXML;
+import javafx.geometry.Side;
 import javafx.scene.control.*;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
 import netscape.javascript.JSObject;
 import org.openapitools.client.api.DefaultApi;
+import javafx.scene.layout.VBox;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -25,16 +31,52 @@ public class MainViewController {
 
     @FXML private WebView mapView;
     @FXML private TextField searchField;
+    @FXML private TextField departureField;
+    @FXML private TextField arrivalField;
+    @FXML private DatePicker datePicker;
+    @FXML private TextField timeField;
+    @FXML private ComboBox<String> timeModeBox;
+    @FXML private TextField toField;
+    @FXML private ChoiceBox<String> directionChoice;
+    @FXML private VBox routePlannerPanel;
 
-    private WebEngine webEngine;
     private final StopService stopService = new StopService();
     private final ContextMenu suggestionMenu = new ContextMenu();
+    private final ContextMenu departureSuggestionMenu = new ContextMenu();
+    private final ContextMenu arrivalSuggestionMenu = new ContextMenu();
     private final PauseTransition debounce = new PauseTransition(Duration.millis(300));
+
+    private WebEngine webEngine;
+
+    @FXML
+    private void onSwapStops() {
+        String from = departureField.getText();
+        String to = arrivalField.getText();
+        departureField.setText(to);
+        arrivalField.setText(from);
+    }
 
     @FXML
     public void initialize() {
         setupMap();
         setupSearchField();
+        setDefaultDateTime();
+    }
+
+    private void setDefaultDateTime() {
+        datePicker.setValue(LocalDate.now());
+        LocalTime now = LocalTime.now();
+        timeField.setText(now.format(DateTimeFormatter.ofPattern("HH:mm")));
+
+        // Gomb hozzáadása a "Most" beállításhoz
+        ContextMenu timeMenu = new ContextMenu();
+        MenuItem nowItem = new MenuItem("Most");
+        nowItem.setOnAction(e -> {
+            LocalTime current = LocalTime.now();
+            timeField.setText(current.format(DateTimeFormatter.ofPattern("HH:mm")));
+        });
+        timeMenu.getItems().add(nowItem);
+        timeField.setContextMenu(timeMenu);
     }
 
     private void setupMap() {
@@ -60,7 +102,6 @@ public class MainViewController {
             debounce.setOnFinished(e -> fetchSuggestions(newText));
             debounce.playFromStart();
         });
-
     }
 
     private void showSuggestions(Map<String, List<StopDTO>> grouped) {
@@ -77,8 +118,24 @@ public class MainViewController {
         }
 
         if (!suggestionMenu.isShowing()) {
-            suggestionMenu.show(searchField, javafx.geometry.Side.BOTTOM, 0, 0);
+            suggestionMenu.show(searchField, Side.BOTTOM, 0, 0);
         }
+    }
+
+    @FXML
+    private void onPlanRoute() {
+        String departure = departureField.getText().trim();
+        String arrival = arrivalField.getText().trim();
+        String timeText = timeField.getText().trim();
+        String date = datePicker.getValue() != null ? datePicker.getValue().toString() : null;
+        String mode = timeModeBox.getValue();
+
+        if (departure.isEmpty() || arrival.isEmpty() || date == null || timeText.isEmpty() || mode == null) {
+            showAlert("Kérlek, tölts ki minden mezőt az útvonaltervezéshez.");
+            return;
+        }
+
+        System.out.println("Útvonaltervezés: " + departure + " → " + arrival + " @ " + date + " " + timeText + " (" + mode + ")");
     }
 
     @FXML
@@ -103,7 +160,6 @@ public class MainViewController {
         }
     }
 
-
     private void showMultipleStopsOnMap(List<StopDTO> stops) {
         if (stops == null || stops.isEmpty()) return;
 
@@ -127,9 +183,15 @@ public class MainViewController {
     public void javaGetStopDetails(String stopId, String name, double lat, double lon) {
         new Thread(() -> {
             try {
-                // Itt nem kell újra lekérni a stopId-t, hiszen már átjött!
                 List<DepartureDTO> departures = new DepartureService(new DefaultApi(ApiClientProvider.getClient()))
                         .getDepartures(stopId);
+
+                if (departures.isEmpty()) {
+                    departures = new DepartureService(new DefaultApi(ApiClientProvider.getClient()))
+                            .getNearbyDepartures(lat, lon);
+                    System.out.println("Üres");
+                }
+
                 String popupHtml = DepartureViewBuilder.build(departures);
 
                 Platform.runLater(() -> {
@@ -142,33 +204,77 @@ public class MainViewController {
         }).start();
     }
 
-private void fetchSuggestions(String query) {
-    new Thread(() -> {
-        List<StopDTO> allStops = stopService.getStopsByName(query);
-        Map<String, List<StopDTO>> grouped = allStops.stream()
-                .collect(Collectors.groupingBy(StopDTO::getName));
+    private void fetchSuggestions(String query) {
+        new Thread(() -> {
+            List<StopDTO> allStops = stopService.getStopsByName(query);
+            Map<String, List<StopDTO>> grouped = allStops.stream()
+                    .collect(Collectors.groupingBy(StopDTO::getName));
 
-        Platform.runLater(() -> {
-            if (allStops.isEmpty()) {
-                suggestionMenu.hide();
-            } else {
-                suggestionMenu.getItems().clear();
+            Platform.runLater(() -> {
+                if (allStops.isEmpty()) {
+                    suggestionMenu.hide();
+                } else {
+                    suggestionMenu.getItems().clear();
+                    for (String name : grouped.keySet()) {
+                        MenuItem item = new MenuItem(name);
+                        item.setOnAction(e -> {
+                            searchField.setText(name);
+                            suggestionMenu.hide();
+                            showMultipleStopsOnMap(grouped.get(name));
+                        });
+                        suggestionMenu.getItems().add(item);
+                    }
+
+                    if (!suggestionMenu.isShowing()) {
+                        suggestionMenu.show(searchField, Side.BOTTOM, 0, 0);
+                    }
+                }
+            });
+        }).start();
+    }
+
+    @FXML
+    private void onDepartureKeyTyped() {
+        handleSuggestionInput(departureField, departureSuggestionMenu);
+    }
+
+    @FXML
+    private void onArrivalKeyTyped() {
+        handleSuggestionInput(arrivalField, arrivalSuggestionMenu);
+    }
+
+    public void onToggleRoutePlanner(ActionEvent actionEvent) {
+        boolean visible = routePlannerPanel.isVisible();
+        routePlannerPanel.setVisible(!visible);
+        routePlannerPanel.setManaged(!visible);
+    }
+
+    private void handleSuggestionInput(TextField field, ContextMenu menu) {
+        String text = field.getText().trim();
+        if (text.length() < 2) {
+            menu.hide();
+            return;
+        }
+
+        new Thread(() -> {
+            List<StopDTO> stops = stopService.getStopsByName(text);
+            Map<String, List<StopDTO>> grouped = stops.stream()
+                    .collect(Collectors.groupingBy(StopDTO::getName));
+
+            Platform.runLater(() -> {
+                menu.getItems().clear();
                 for (String name : grouped.keySet()) {
                     MenuItem item = new MenuItem(name);
                     item.setOnAction(e -> {
-                        searchField.setText(name);
-                        suggestionMenu.hide();
-                        showMultipleStopsOnMap(grouped.get(name));
+                        field.setText(name);
+                        menu.hide();
                     });
-                    suggestionMenu.getItems().add(item);
+                    menu.getItems().add(item);
                 }
-
-                if (!suggestionMenu.isShowing()) {
-                    suggestionMenu.show(searchField, javafx.geometry.Side.BOTTOM, 0, 0);
+                if (!menu.isShowing()) {
+                    menu.show(field, Side.BOTTOM, 0, 0);
                 }
-            }
-        });
-    }).start();
-}
-
+            });
+        }).start();
+    }
 }

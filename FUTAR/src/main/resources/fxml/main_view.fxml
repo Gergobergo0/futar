@@ -9,15 +9,36 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.web.WebView?>
 
-
+<?import javafx.collections.FXCollections?>
 <BorderPane fx:controller="futar.futar.controller.MainViewController"
             xmlns:fx="http://javafx.com/fxml">
-
     <top>
-        <ToolBar>
-            <TextField fx:id="searchField" promptText="Megálló keresése..."/>
-            <Button text="Keresés" onAction="#onSearch"/>
-        </ToolBar>
+        <VBox>
+            <ToolBar>
+                <TextField fx:id="searchField" promptText="Megálló keresése..."/>
+                <Button text="Keresés" onAction="#onSearch"/>
+                <Button text="Útvonaltervezés" onAction="#onToggleRoutePlanner"/>
+            </ToolBar>
+
+            <VBox fx:id="routePlannerPanel" visible="false" managed="false">
+                <ToolBar>
+                    <TextField fx:id="departureField" promptText="Indulási megálló" onKeyTyped="#onDepartureKeyTyped"/>
+                    <Button text="⇄" onAction="#onSwapStops"/>
+                    <TextField fx:id="arrivalField" promptText="Érkezési megálló" onKeyTyped="#onArrivalKeyTyped"/>
+                    <DatePicker fx:id="datePicker" />
+                    <TextField fx:id="timeField" promptText="Idő (HH:mm)" />
+                    <ComboBox fx:id="timeModeBox">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="Indulás"/>
+                                <String fx:value="Érkezés"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                    <Button text="Tervezés" onAction="#onPlanRoute"/>
+                </ToolBar>
+            </VBox>
+        </VBox>
     </top>
 
     <center>
