@@ -71,7 +71,7 @@ public class DepartureService {
                         long minutes = (time - now) / 60;
                         if (minutes < 0) minutes = 0;
 
-                        return new DepartureDTO(routeShortName, headsign, formattedTime, tripHeadsign, minutes);
+                        return new DepartureDTO(routeShortName, headsign, formattedTime, tripHeadsign, minutes, tripId);
                     })
                     .collect(Collectors.toList());
 
@@ -118,6 +118,7 @@ public class DepartureService {
                     .flatMap(group -> group.getStopTimes().stream())
                     .map(stopTime -> {
                         String tripId = stopTime.getTripId();
+                        System.out.println("TRIP-ID:" + tripId);
                         String routeShortName = "?";
                         String tripHeadsign = "?";
 
@@ -139,7 +140,7 @@ public class DepartureService {
                         long minutes = (time - now) / 60;
                         if (minutes < 0) minutes = 0;
 
-                        return new DepartureDTO(routeShortName, tripHeadsign, formattedTime, tripHeadsign, minutes);
+                        return new DepartureDTO(routeShortName, tripHeadsign, formattedTime, tripHeadsign, minutes, tripId);
                     })
                     .collect(Collectors.toList());
 

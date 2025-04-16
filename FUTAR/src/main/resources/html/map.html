@@ -13,16 +13,16 @@
 <div id="map"></div>
 <script>
     var defaultIcon = L.icon({
-        iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-        iconSize: [25, 41],
+        iconUrl: 'https://img.icons8.com/?size=100&id=13800&format=png&color=000000',
+        iconSize: [35, 41],
         iconAnchor: [12, 41],
         popupAnchor: [1, -34],
         shadowSize: [41, 41]
     });
 
     var highlightedIcon = L.icon({
-        iconUrl: 'https://www.iconsdb.com/icons/preview/red/marker-xxl.png',
-        iconSize: [30, 48],
+        iconUrl: 'https://img.icons8.com/?size=100&id=13800&format=png&color=000000',
+        iconSize: [42, 49],
         iconAnchor: [15, 48],
         popupAnchor: [1, -34],
         shadowSize: [41, 41]
@@ -78,13 +78,19 @@
 
 
     function updatePopupContent(stopName, htmlContent) {
-        logToJava("POPUP")
-        console.log("Popup frissítése: " + stopName);
         if (selectedMarker) {
             selectedMarker.setPopupContent("<b>" + stopName + "</b><br>" + htmlContent);
             selectedMarker.openPopup(); // 💥 ez kell
         }
         }
+
+    window.onRouteClick = function(tripId) {
+        if (window.java && window.java.handleRouteClick) {
+            window.java.handleRouteClick(tripId);
+        } else {
+            logToJava("handleRouteClick nem elérhető");
+        }
+    }
 
 
 
@@ -97,7 +103,6 @@
     }
 
     window.focusOn = function(lat, lng) {
-        logToJava("🔍 focusOn called", lat, lng);
         map.setView([lat, lng], 17);
     };
 

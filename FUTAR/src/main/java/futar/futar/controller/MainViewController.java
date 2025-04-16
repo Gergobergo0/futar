@@ -8,7 +8,7 @@ import javafx.scene.control.*;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
-
+import futar.futar.view.FavoritesDialogBuilder;
 public class MainViewController {
 
     @FXML private WebView mapView;
@@ -46,6 +46,24 @@ public class MainViewController {
         routePlannerController.setupSuggestionHandlers();
         routePlannerController.setDefaultDateTime();
     }
+    @FXML
+    public void onShowFavorites() {
+        Dialog<Void> dialog = new Dialog<>();
+        dialog.setTitle("⭐ Kedvencek");
+        dialog.setHeaderText("Kedvenc megállók és útvonalak");
+
+        VBox container = new VBox(10);
+        FavoritesDialogBuilder.refreshContent(container, mapController.getFavoriteManager(), () -> {
+            // újratöltés itt frissít csak a konténer tartalmát
+            FavoritesDialogBuilder.refreshContent(container, mapController.getFavoriteManager(), this::onShowFavorites);
+        });
+
+        dialog.getDialogPane().setContent(container);
+        dialog.getDialogPane().getButtonTypes().add(ButtonType.CLOSE);
+        dialog.showAndWait();
+    }
+
+
 
 
     @FXML
@@ -95,4 +113,18 @@ public class MainViewController {
     public void javaGetStopDetails(String stopId, String name, double lat, double lon) {
         mapController.handleStopDetails(stopId, name, lat, lon);
     }
+
+    @FXML
+    public void addFavoriteStop() {
+        mapController.addFavoriteStop();
+    }
+
+    public void toggleFavorite() {
+        mapController.toggleFavorite();
+    }
+
+    public void handleRouteClick(String tripId) {
+        mapController.handleRouteClick(tripId);
+    }
+
 }

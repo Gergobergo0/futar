@@ -65,7 +65,10 @@ public class SearchController {
                         item.setOnAction(e -> {
                             searchField.setText(name);
                             suggestionMenu.hide();
-                            mapController.clearAndShowStops(grouped.get(name));
+                            List<StopDTO> stops = grouped.get(name);
+                            if (stops != null && !stops.isEmpty()) {
+                                mapController.showMultipleStopsOnMap(stops, false); // ez már fókuszál is
+                            }
                         });
                         suggestionMenu.getItems().add(item);
                     }
@@ -85,7 +88,7 @@ public class SearchController {
         new Thread(() -> {
             List<StopDTO> stops = stopService.getStopsByName(query);
             Platform.runLater(() -> {
-                mapController.showMultipleStopsOnMap(stops);
+                mapController.showMultipleStopsOnMap(stops, false);
                 if (stops.isEmpty()) UIUtils.showAlert("Nem található megálló: " + query);
             });
         }).start();
