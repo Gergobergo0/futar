@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.web.WebView?>
+
+
+<BorderPane fx:controller="futar.futar.controller.MainViewController"
+            xmlns:fx="http://javafx.com/fxml">
+
+    <top>
+        <ToolBar>
+            <TextField fx:id="searchField" promptText="Megálló keresése..."/>
+            <Button text="Keresés" onAction="#onSearch"/>
+        </ToolBar>
+    </top>
+
+    <center>
+        <WebView fx:id="mapView" />
+    </center>
+</BorderPane>
