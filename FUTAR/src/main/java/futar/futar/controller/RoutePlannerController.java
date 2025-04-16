@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class RoutePlannerController {
+    private final Spinner<Integer> hourSpinner;
+    private final Spinner<Integer> minuteSpinner;
 
     private final TextField departureField;
     private final TextField arrivalField;
@@ -25,30 +27,30 @@ public class RoutePlannerController {
     private final StopService stopService = new StopService();
 
     public RoutePlannerController(TextField departureField, TextField arrivalField,
-                                  DatePicker datePicker, TextField timeField,
+                                  DatePicker datePicker,
+                                  Spinner<Integer> hourSpinner, Spinner<Integer> minuteSpinner, TextField timeField,
                                   ComboBox<String> timeModeBox) {
         this.departureField = departureField;
         this.arrivalField = arrivalField;
         this.datePicker = datePicker;
+        this.hourSpinner = hourSpinner;
+        this.minuteSpinner = minuteSpinner;
         this.timeField = timeField;
         this.timeModeBox = timeModeBox;
     }
 
     public void setDefaultDateTime() {
         datePicker.setValue(LocalDate.now());
+
+        hourSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 23));
+        minuteSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 59));
+
         LocalTime now = LocalTime.now();
-        timeField.setText(now.format(DateTimeFormatter.ofPattern("HH:mm")));
-
-        ContextMenu timeMenu = new ContextMenu();
-        MenuItem nowItem = new MenuItem("Most");
-        nowItem.setOnAction(e -> {
-            LocalTime current = LocalTime.now();
-            timeField.setText(current.format(DateTimeFormatter.ofPattern("HH:mm")));
-        });
-        timeMenu.getItems().add(nowItem);
-        setupTimeFieldContextMenu();
-
+        hourSpinner.getValueFactory().setValue(now.getHour());
+        minuteSpinner.getValueFactory().setValue(now.getMinute());
+        timeModeBox.setValue("Indulás");
     }
+
 
     public void swapStops() {
         String from = departureField.getText();
@@ -61,7 +63,7 @@ public class RoutePlannerController {
     public void planRoute() {
         String departure = departureField.getText().trim();
         String arrival = arrivalField.getText().trim();
-        String timeText = timeField.getText().trim();
+        String timeText = String.format("%02d:%02d", hourSpinner.getValue(), minuteSpinner.getValue());
         String date = datePicker.getValue() != null ? datePicker.getValue().toString() : null;
         String mode = timeModeBox.getValue();
 
@@ -170,8 +172,11 @@ public class RoutePlannerController {
     }
 
     public void onSetNow() {
-        timeField.setText(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm")));
+        LocalTime now = LocalTime.now();
+        hourSpinner.getValueFactory().setValue(now.getHour());
+        minuteSpinner.getValueFactory().setValue(now.getMinute());
     }
+
 
 
 

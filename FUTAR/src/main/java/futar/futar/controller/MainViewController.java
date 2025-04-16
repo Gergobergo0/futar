@@ -35,7 +35,11 @@ public class MainViewController {
 
         this.searchController = new SearchController(searchField, debounce, mapController);
         this.routePlannerController = new RoutePlannerController(
-                departureField, arrivalField, datePicker, timeField, timeModeBox
+                departureField, arrivalField,
+                datePicker,
+                hourSpinner, minuteSpinner,
+                timeField,
+                timeModeBox
         );
 
         searchController.setupSearchField();
@@ -68,6 +72,8 @@ public class MainViewController {
     private void onArrivalKeyTyped() {
         routePlannerController.handleArrivalSuggestions();
     }
+    @FXML private Spinner<Integer> hourSpinner;
+    @FXML private Spinner<Integer> minuteSpinner;
 
     @FXML
     public void onToggleRoutePlanner(ActionEvent actionEvent) {
@@ -83,8 +89,9 @@ public class MainViewController {
     @FXML public void onDecreaseHour() { routePlannerController.onDecreaseHour(); }
     @FXML public void onIncreaseMinute() { routePlannerController.onIncreaseMinute(); }
     @FXML public void onDecreaseMinute() { routePlannerController.onDecreaseMinute(); }
-    @FXML public void onSetNow() { routePlannerController.onSetNow(); }
-
+    @FXML public void onSetNow() {
+        routePlannerController.onSetNow();
+    }
     public void javaGetStopDetails(String stopId, String name, double lat, double lon) {
         mapController.handleStopDetails(stopId, name, lat, lon);
     }

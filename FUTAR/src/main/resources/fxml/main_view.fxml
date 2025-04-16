@@ -26,14 +26,13 @@
                     <Button text="⇄" onAction="#onSwapStops"/>
                     <TextField fx:id="arrivalField" promptText="Érkezési megálló" onKeyTyped="#onArrivalKeyTyped"/>
                     <DatePicker fx:id="datePicker" />
-                    <TextField fx:id="timeField" promptText="Idő (HH:mm)" />
-                    <HBox spacing="4" alignment="CENTER_LEFT">
-                        <Button text="+1 óra" onAction="#onIncreaseHour"/>
-                        <Button text="-1 óra" onAction="#onDecreaseHour"/>
-                        <Button text="+1 perc" onAction="#onIncreaseMinute"/>
-                        <Button text="-1 perc" onAction="#onDecreaseMinute"/>
+                    <HBox spacing="6" alignment="CENTER_LEFT">
+                        <Spinner fx:id="hourSpinner" prefWidth="70"/>
+                        <Label text=":"/>
+                        <Spinner fx:id="minuteSpinner" prefWidth="70"/>
                         <Button text="Most" onAction="#onSetNow"/>
                     </HBox>
+
 
                     <ComboBox fx:id="timeModeBox">
                         <items>
