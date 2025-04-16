@@ -99,9 +99,10 @@ public class MainViewController {
         JSObject window = (JSObject) webEngine.executeScript("window");
         window.call("clearStops");
         for (StopDTO stop : stops) {
-            window.call("addStopTracked", stop.getLat(), stop.getLon(), stop.getName());
+            window.call("addStopTracked", stop.getLat(), stop.getLon(), stop.getName(), stop.getId());
         }
     }
+
 
     private void showMultipleStopsOnMap(List<StopDTO> stops) {
         if (stops == null || stops.isEmpty()) return;
@@ -123,10 +124,10 @@ public class MainViewController {
         System.out.println("Received from JS: " + message);
     }
 
-    public void javaGetStopDetails(String name, double lat, double lon) {
+    public void javaGetStopDetails(String stopId, String name, double lat, double lon) {
         new Thread(() -> {
             try {
-                String stopId = stopService.getStopIdByName(name);
+                // Itt nem kell újra lekérni a stopId-t, hiszen már átjött!
                 List<DepartureDTO> departures = new DepartureService(new DefaultApi(ApiClientProvider.getClient()))
                         .getDepartures(stopId);
                 String popupHtml = DepartureViewBuilder.build(departures);
@@ -140,6 +141,7 @@ public class MainViewController {
             }
         }).start();
     }
+
 private void fetchSuggestions(String query) {
     new Thread(() -> {
         List<StopDTO> allStops = stopService.getStopsByName(query);
