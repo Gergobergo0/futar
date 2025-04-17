@@ -52,6 +52,15 @@
             console.warn("Java objektum nem elérhető még");
         }
     }
+    function toggleFavorite() {
+        if (window.java && typeof window.java.toggleFavorite === 'function') {
+            logToJava("📌 Java toggleFavorite() meghívása");
+            window.java.toggleFavorite();
+        } else {
+            logToJava("❌ java.toggleFavorite nem elérhető");
+        }
+    }
+
 
     function addStopTracked(lat, lng, name, stopId) {
         var marker = L.marker([lat, lng], { icon: defaultIcon });
@@ -113,7 +122,11 @@
         "Világos": light,
         "Sötét": dark
     };
-
+    function closePopup() {
+        if (selectedMarker) {
+            selectedMarker.closePopup();
+        }
+    }
     L.control.layers(baseMaps).addTo(map);
 </script>
 </body>

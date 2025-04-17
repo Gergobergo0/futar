@@ -1,5 +1,6 @@
 package futar.futar.controller;
 
+import futar.futar.controller.map.StopMarkerDisplayer;
 import futar.futar.model.StopDTO;
 import futar.futar.service.StopService;
 import javafx.animation.PauseTransition;
@@ -14,6 +15,8 @@ import futar.futar.utils.UIUtils;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import futar.futar.controller.map.MapController;
+import futar.futar.controller.map.MapInitializer;
 
 public class SearchController {
 
@@ -22,12 +25,17 @@ public class SearchController {
     private final StopService stopService = new StopService();
     private final ContextMenu suggestionMenu = new ContextMenu();
     private MapController mapController;
+    private final StopMarkerDisplayer stopMarkerDisplayer;
 
 
     public SearchController(TextField searchField, PauseTransition debounce, MapController mapController) {
         this.searchField = searchField;
         this.debounce = debounce;
         this.mapController = mapController;
+        this.stopMarkerDisplayer = mapController.getStopMarkerDisplayer();
+    }
+    public void showMultipleStopsOnMap(List<StopDTO> stops, boolean openPopup) {
+        stopMarkerDisplayer.showMultipleStops(stops, openPopup);
     }
 
     public void setupSearchField() {
@@ -67,7 +75,7 @@ public class SearchController {
                             suggestionMenu.hide();
                             List<StopDTO> stops = grouped.get(name);
                             if (stops != null && !stops.isEmpty()) {
-                                mapController.showMultipleStopsOnMap(stops, false); // ez már fókuszál is
+                                stopMarkerDisplayer.showMultipleStops(stops, false);
                             }
                         });
                         suggestionMenu.getItems().add(item);
@@ -88,7 +96,7 @@ public class SearchController {
         new Thread(() -> {
             List<StopDTO> stops = stopService.getStopsByName(query);
             Platform.runLater(() -> {
-                mapController.showMultipleStopsOnMap(stops, false);
+                stopMarkerDisplayer.showMultipleStops(stops, false);
                 if (stops.isEmpty()) UIUtils.showAlert("Nem található megálló: " + query);
             });
         }).start();

@@ -25,9 +25,10 @@ public class DepartureViewBuilder {
                     .append(")</li>");
         }
         html.append("</ul>");
-        html.append("<button id='favoriteButton' onclick=\"java.toggleFavorite()\">")
+        html.append("<button id='favoriteButton' onclick=\"toggleFavorite()\">")
                 .append(buttonText)
                 .append("</button>");
+
         return html.toString();
     }
 

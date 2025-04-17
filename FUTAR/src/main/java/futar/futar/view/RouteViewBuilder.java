@@ -11,7 +11,8 @@ public class RouteViewBuilder {
 
         for (StopDTO stop : stops) {
             long minutes = (stop.getArrivalEpochSeconds() - now) / 60;
-            if (minutes < 0) minutes = 0;
+            System.out.println(minutes);
+
 
             html.append("<li><a href=\"#\" onclick=\"java.javaGetStopDetails('")
                     .append(stop.getId()).append("','")
@@ -20,7 +21,7 @@ public class RouteViewBuilder {
                     .append(stop.getLon()).append("')\">")
                     .append(stop.getName())
                     .append("</a> – ")
-                    .append(minutes == 0 ? "MOST" : minutes + " perc múlva")
+                    .append(minutes < 0 ? "" : minutes == 0 ? "MOST" : minutes + " perc múlva")
                     .append("</li>");
         }
 

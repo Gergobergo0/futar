@@ -29,8 +29,6 @@ public class TripApi {
         );
 
         List<TransitTripStopTime> stopTimes = response.getData().getEntry().getStopTimes();
-
-        // <<< A LÉNYEG ITT: lekérjük az OTPTransitReferences példányt
         OTPTransitReferences otpRefs = response.getData().getReferences().getOTPTransitReferences();
         Map<String, TransitStop> stopMap = otpRefs.getStops();
 
@@ -44,7 +42,6 @@ public class TripApi {
                 result.add(dto);
             }
         }
-
         return result;
     }
 }
