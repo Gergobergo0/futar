@@ -100,6 +100,14 @@
             logToJava("handleRouteClick nem elérhető");
         }
     }
+    function clearRouteLine() {
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+        routeMarkers.forEach(marker => map.removeLayer(marker));
+        routeMarkers = [];
+    }
 
 
 
@@ -128,6 +136,49 @@
         }
     }
     L.control.layers(baseMaps).addTo(map);
+    var routeLine = null;
+    var routeMarkers = [];
+
+    function showRouteLine(lat1, lng1, lat2, lng2, distanceKmText) {
+        // Töröljük az előző vonalat és markereket
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+        routeMarkers.forEach(marker => map.removeLayer(marker));
+        routeMarkers = [];
+
+        // Marker: honnan
+        var marker1 = L.marker([lat1, lng1], { icon: highlightedIcon }).addTo(map);
+        var marker2 = L.marker([lat2, lng2], { icon: highlightedIcon }).addTo(map);
+        routeMarkers.push(marker1, marker2);
+
+        // Vonal
+        routeLine = L.polyline([[lat1, lng1], [lat2, lng2]], { color: 'blue' }).addTo(map);
+
+        // Felirat középre
+        var midLat = (lat1 + lat2) / 2;
+        var midLng = (lng1 + lng2) / 2;
+        var label = L.marker([midLat, midLng], {
+            icon: L.divIcon({
+                className: 'distance-label',
+                html: '<div style="background:white;padding:2px 6px;border-radius:4px;border:1px solid #ccc;">' + distanceKmText + '</div>',
+                iconSize: [100, 24]
+            })
+        }).addTo(map);
+        routeMarkers.push(label);
+
+        // Fókusz
+        var bounds = L.latLngBounds([[lat1, lng1], [lat2, lng2]]);
+        map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    map.on('popupclose', function () {
+        if (window.java && window.java.onPopupClosed) {
+            window.java.onPopupClosed();
+        }
+    });
+
 </script>
 </body>
 </html>

@@ -46,4 +46,15 @@ public class StopMarkerDisplayer {
             }
         });
     }
+
+    public void clearAllStops() {
+        JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
+        window.call("clearStops");
+    }
+
+    public void clearMap() {
+        JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
+        window.call("clearStops");
+        window.call("clearRouteLine");
+    }
 }

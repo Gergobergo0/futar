@@ -29,7 +29,6 @@ public class DepartureDTO {
     public String getFormattedTime() {
         return formattedTime;
     }
-
     public long getMinutes() {
         return minutes;
     }

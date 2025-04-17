@@ -1,22 +1,24 @@
 package futar.futar.controller;
 
+import futar.futar.controller.map.PopupManager;
 import futar.futar.model.StopDTO;
 import futar.futar.service.StopService;
 import javafx.application.Platform;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
 import futar.futar.utils.UIUtils;
+
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-
+import futar.futar.service.RoutePlannerService;
 public class RoutePlannerController {
     private final Spinner<Integer> hourSpinner;
     private final Spinner<Integer> minuteSpinner;
-
+    private final RoutePlannerService routePlannerService = new RoutePlannerService();
     private final TextField departureField;
     private final TextField arrivalField;
     private final DatePicker datePicker;
@@ -25,11 +27,13 @@ public class RoutePlannerController {
     private final ContextMenu departureSuggestionMenu = new ContextMenu();
     private final ContextMenu arrivalSuggestionMenu = new ContextMenu();
     private final StopService stopService = new StopService();
+    private final PopupManager popupManager;
 
     public RoutePlannerController(TextField departureField, TextField arrivalField,
                                   DatePicker datePicker,
                                   Spinner<Integer> hourSpinner, Spinner<Integer> minuteSpinner, TextField timeField,
-                                  ComboBox<String> timeModeBox) {
+                                  ComboBox<String> timeModeBox,
+                                  PopupManager popupManager) {
         this.departureField = departureField;
         this.arrivalField = arrivalField;
         this.datePicker = datePicker;
@@ -37,6 +41,8 @@ public class RoutePlannerController {
         this.minuteSpinner = minuteSpinner;
         this.timeField = timeField;
         this.timeModeBox = timeModeBox;
+        this.popupManager = popupManager;
+        setupFocusListeners();
     }
 
     public void setDefaultDateTime() {
@@ -51,13 +57,11 @@ public class RoutePlannerController {
         timeModeBox.setValue("Indulás");
     }
 
-
     public void swapStops() {
         String from = departureField.getText();
         String to = arrivalField.getText();
         departureField.setText(to);
         arrivalField.setText(from);
-
     }
 
     public void planRoute() {
@@ -73,7 +77,21 @@ public class RoutePlannerController {
         }
 
         System.out.println("Útvonaltervezés: " + departure + " → " + arrival + " @ " + date + " " + timeText + " (" + mode + ")");
+
+        // 🔽 Itt hívjuk meg a választási lehetőségeket
+        new Thread(() -> {
+            List<RoutePlannerService.RoutePath> routes = routePlannerService.findTopDirectRoutes(departure, arrival, 3);
+
+            Platform.runLater(() -> {
+                System.out.println("\n--- TOP 3 ÚTVONAL a „" + departure + " → " + arrival + "” között ---");
+                routePlannerService.printDirectRoutesPretty(routes);
+            });
+        }).start();
+
+        routePlannerService.printNearbyStops("Újbuda-központ M");
+
     }
+
 
     public void setupSuggestionHandlers() {
         setupSuggestions(departureField, departureSuggestionMenu);
@@ -111,6 +129,8 @@ public class RoutePlannerController {
                     item.setOnAction(e -> {
                         field.setText(name);
                         menu.hide();
+                        field.getParent().requestFocus(); // 👈 fókusz elvétel
+                        popupManager.tryShowRoutePreview(departureField.getText(), arrivalField.getText());
                     });
                     menu.getItems().add(item);
                 }
@@ -120,6 +140,7 @@ public class RoutePlannerController {
             });
         }).start();
     }
+
     private void setupTimeFieldContextMenu() {
         ContextMenu timeMenu = new ContextMenu();
 
@@ -177,7 +198,18 @@ public class RoutePlannerController {
         minuteSpinner.getValueFactory().setValue(now.getMinute());
     }
 
-
+    private void setupFocusListeners() {
+        departureField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                popupManager.tryShowRoutePreview(departureField.getText(), arrivalField.getText());
+            }
+        });
+        arrivalField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (!newVal) {
+                popupManager.tryShowRoutePreview(departureField.getText(), arrivalField.getText());
+            }
+        });
+    }
 
 
 

@@ -1,5 +1,6 @@
 package futar.futar.controller;
 
+import futar.futar.controller.map.PopupManager;
 import futar.futar.controller.map.StopMarkerDisplayer;
 import futar.futar.model.StopDTO;
 import futar.futar.service.StopService;
@@ -9,8 +10,6 @@ import javafx.geometry.Side;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TextField;
-import netscape.javascript.JSObject;
-import javafx.scene.web.WebEngine;
 import futar.futar.utils.UIUtils;
 import java.util.List;
 import java.util.Map;
@@ -26,15 +25,19 @@ public class SearchController {
     private final ContextMenu suggestionMenu = new ContextMenu();
     private MapController mapController;
     private final StopMarkerDisplayer stopMarkerDisplayer;
-
+    private final PopupManager popupManager;
 
     public SearchController(TextField searchField, PauseTransition debounce, MapController mapController) {
         this.searchField = searchField;
         this.debounce = debounce;
         this.mapController = mapController;
         this.stopMarkerDisplayer = mapController.getStopMarkerDisplayer();
+        this.popupManager = mapController.getPopupManager();
     }
+
     public void showMultipleStopsOnMap(List<StopDTO> stops, boolean openPopup) {
+        stopMarkerDisplayer.clearMap();
+        popupManager.clearRoutePreview();
         stopMarkerDisplayer.showMultipleStops(stops, openPopup);
     }
 
@@ -50,12 +53,12 @@ public class SearchController {
             debounce.playFromStart();
         });
     }
+
     public void initialize(TextField searchField, PauseTransition debounce, MapController mapController) {
         this.searchField = searchField;
         this.debounce = debounce;
         this.mapController = mapController;
     }
-
 
     private void fetchSuggestions(String query) {
         new Thread(() -> {
@@ -73,6 +76,8 @@ public class SearchController {
                         item.setOnAction(e -> {
                             searchField.setText(name);
                             suggestionMenu.hide();
+                            stopMarkerDisplayer.clearMap();
+                            popupManager.clearRoutePreview();
                             List<StopDTO> stops = grouped.get(name);
                             if (stops != null && !stops.isEmpty()) {
                                 stopMarkerDisplayer.showMultipleStops(stops, false);
@@ -96,6 +101,8 @@ public class SearchController {
         new Thread(() -> {
             List<StopDTO> stops = stopService.getStopsByName(query);
             Platform.runLater(() -> {
+                stopMarkerDisplayer.clearMap();
+                popupManager.clearRoutePreview();
                 stopMarkerDisplayer.showMultipleStops(stops, false);
                 if (stops.isEmpty()) UIUtils.showAlert("Nem található megálló: " + query);
             });

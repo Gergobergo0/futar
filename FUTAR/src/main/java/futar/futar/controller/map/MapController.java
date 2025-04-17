@@ -23,10 +23,17 @@ public class MapController {
         favoriteManager.load();
         this.mapInitializer = new MapInitializer(mapView);
         this.favoriteHandler = new FavoriteHandler(favoriteManager);
-        this.popupManager = new PopupManager(mapInitializer, favoriteManager);
-        this.routeInfoDisplayer = new RouteInfoDisplayer(popupManager);
         this.stopMarkerDisplayer = new StopMarkerDisplayer(mapInitializer);
+        this.popupManager = new PopupManager(mapInitializer, favoriteManager, stopMarkerDisplayer);
+        this.routeInfoDisplayer = new RouteInfoDisplayer(popupManager);
+
+
     }
+
+    public PopupManager getPopupManager() {
+        return popupManager;
+    }
+
 
     public void setJavaConnector(Object connector) {
         mapInitializer.setJavaConnector(connector);

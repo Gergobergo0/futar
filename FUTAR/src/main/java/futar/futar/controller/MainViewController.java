@@ -44,8 +44,10 @@ public class MainViewController {
                 datePicker,
                 hourSpinner, minuteSpinner,
                 timeField,
-                timeModeBox
+                timeModeBox,
+                mapController.getPopupManager()  // 💡 hiányzó paraméter
         );
+
         searchController.setupSearchField();
         routePlannerController.setupSuggestionHandlers();
         routePlannerController.setDefaultDateTime();
@@ -93,4 +95,12 @@ public class MainViewController {
     public void addFavoriteStop() { mapController.addFavoriteStop(); }
     public void toggleFavorite() { mapController.toggleFavorite(); }
     public void handleRouteClick(String tripId) { mapController.handleRouteClick(tripId); }
+
+    // MainViewController.java
+    public void onPopupClosed() {
+        mapController.getPopupManager().stopAutoRefresh();
+    }
+
+
+
 }

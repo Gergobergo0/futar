@@ -6,6 +6,7 @@ import org.openapitools.client.api.DefaultApi;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import java.time.Instant;
@@ -96,7 +97,7 @@ public class DepartureService {
                     null,
                     null,
                     true,
-                    10,
+                    50,
                     (float) lat,
                     (float) lon,
                     null,
@@ -150,6 +151,65 @@ public class DepartureService {
             return List.of();
         }
     }
+    public Optional<String> getRouteNameByTripId(String tripId) {
+        try {
+            TripDetailsOTPMethodResponse response = api.getTripDetails(
+                    Dialect.OTP, null, tripId, null, null, null, "1.0", null, null
+            );
+
+            OTPTransitReferences refs = response.getData().getReferences().getOTPTransitReferences();
+            Map<String, TransitTrip> tripMap = refs.getTrips();
+            Map<String, TransitRoute> routeMap = refs.getRoutes();
+
+            // 👉 Megkeressük a Trip-et a tripId alapján
+            TransitTrip trip = tripMap.get(tripId);
+            if (trip == null) return Optional.empty();
+
+            String routeId = trip.getRouteId(); // ✅ innen jön a route ID
+
+            TransitRoute route = routeMap.get(routeId);
+            if (route == null) return Optional.empty();
+
+            // 👉 Próbáljuk többféle név alapján
+            String name = route.getShortName();
+            if (name == null || name.isBlank()) name = route.getLongName();
+
+            return Optional.ofNullable(name);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    public Optional<String> getArrivalTimeAtStop(String tripId, String stopId) {
+        try {
+            TripDetailsOTPMethodResponse response = api.getTripDetails(
+                    Dialect.OTP, null, tripId, null, null, null, "1.0", null, null
+            );
+
+            List<TransitTripStopTime> stops = response.getData().getEntry().getStopTimes();
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Europe/Budapest"));
+
+            for (TransitTripStopTime stop : stops) {
+                if (stop.getStopId().equals(stopId)) {
+                    long time = stop.getPredictedArrivalTime() != null
+                            ? stop.getPredictedArrivalTime()
+                            : stop.getArrivalTime();
+                    return Optional.of(formatter.format(Instant.ofEpochSecond(time)));
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Optional.empty();
+    }
+
+
+
+
 
 
 
