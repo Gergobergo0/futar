@@ -24,9 +24,9 @@
 
             <VBox fx:id="routePlannerPanel" visible="false" managed="false">
                 <ToolBar>
-                    <TextField fx:id="departureField" promptText="Indulási megálló" onKeyTyped="#onDepartureKeyTyped"/>
+                    <TextField fx:id="departureField" promptText="Indulási megálló"/>
                     <Button text="⇄" onAction="#onSwapStops"/>
-                    <TextField fx:id="arrivalField" promptText="Érkezési megálló" onKeyTyped="#onArrivalKeyTyped"/>
+                    <TextField fx:id="arrivalField" promptText="Érkezési megálló"/>
                     <DatePicker fx:id="datePicker" />
                     <HBox spacing="6" alignment="CENTER_LEFT">
                         <Spinner fx:id="hourSpinner" prefWidth="70"/>

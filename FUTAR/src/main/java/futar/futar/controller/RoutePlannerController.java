@@ -3,6 +3,7 @@ package futar.futar.controller;
 import futar.futar.controller.map.PopupManager;
 import futar.futar.model.StopDTO;
 import futar.futar.service.StopService;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
@@ -13,8 +14,11 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import futar.futar.service.RoutePlannerService;
+import javafx.util.Duration;
+
 public class RoutePlannerController {
     private final Spinner<Integer> hourSpinner;
     private final Spinner<Integer> minuteSpinner;
@@ -42,8 +46,20 @@ public class RoutePlannerController {
         this.timeField = timeField;
         this.timeModeBox = timeModeBox;
         this.popupManager = popupManager;
+        setupDebouncedSearch(departureField, fromDebounce, this::handleDepartureSuggestionsDebounced);
+        setupDebouncedSearch(arrivalField, toDebounce, this::handleArrivalSuggestionsDebounced);
+
         setupFocusListeners();
     }
+
+    private void handleDepartureSuggestionsDebounced(String query) {
+        triggerSuggestionWithQuery(departureField, departureSuggestionMenu, query);
+    }
+
+    private void handleArrivalSuggestionsDebounced(String query) {
+        triggerSuggestionWithQuery(arrivalField, arrivalSuggestionMenu, query);
+    }
+
 
     public void setDefaultDateTime() {
         datePicker.setValue(LocalDate.now());
@@ -93,27 +109,10 @@ public class RoutePlannerController {
     }
 
 
-    public void setupSuggestionHandlers() {
-        setupSuggestions(departureField, departureSuggestionMenu);
-        setupSuggestions(arrivalField, arrivalSuggestionMenu);
-    }
 
-    public void handleDepartureSuggestions() {
-        triggerSuggestion(departureField, departureSuggestionMenu);
-    }
-
-    public void handleArrivalSuggestions() {
-        triggerSuggestion(arrivalField, arrivalSuggestionMenu);
-    }
-
-    private void setupSuggestions(TextField field, ContextMenu menu) {
-        field.setOnKeyTyped(e -> triggerSuggestion(field, menu));
-    }
-
-    private void triggerSuggestion(TextField field, ContextMenu menu) {
-        String text = field.getText().trim();
+    private void triggerSuggestionWithQuery(TextField field, ContextMenu menu, String text) {
         if (text.length() < 2) {
-            menu.hide();
+            Platform.runLater(menu::hide);
             return;
         }
 
@@ -129,17 +128,19 @@ public class RoutePlannerController {
                     item.setOnAction(e -> {
                         field.setText(name);
                         menu.hide();
-                        field.getParent().requestFocus(); // 👈 fókusz elvétel
+                        field.getParent().requestFocus();
                         popupManager.tryShowRoutePreview(departureField.getText(), arrivalField.getText());
                     });
                     menu.getItems().add(item);
                 }
-                if (!menu.isShowing()) {
+                if (!menu.isShowing() && !grouped.isEmpty()) {
                     menu.show(field, Side.BOTTOM, 0, 0);
                 }
             });
         }).start();
     }
+
+
 
     private void setupTimeFieldContextMenu() {
         ContextMenu timeMenu = new ContextMenu();
@@ -210,6 +211,22 @@ public class RoutePlannerController {
             }
         });
     }
+
+    private final PauseTransition fromDebounce = new PauseTransition(Duration.millis(500));
+    private final PauseTransition toDebounce = new PauseTransition(Duration.millis(500));
+
+    public void setupDebouncedSearch(TextField field, PauseTransition debounce, Consumer<String> onSearch) {
+        field.textProperty().addListener((obs, oldText, newText) -> {
+            if (newText.length() < 2) {
+                debounce.stop();
+                return;
+            }
+
+            debounce.setOnFinished(e -> onSearch.accept(newText));
+            debounce.playFromStart();
+        });
+    }
+
 
 
 

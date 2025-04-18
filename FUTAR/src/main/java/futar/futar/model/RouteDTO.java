@@ -47,4 +47,3 @@ public class RouteDTO {
         this.stops = stops;
     }
 }
-

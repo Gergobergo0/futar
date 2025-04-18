@@ -16,9 +16,10 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import futar.futar.controller.map.MapController;
 import futar.futar.controller.map.MapInitializer;
+import java.util.HashMap;
 
 public class SearchController {
-
+    private final Map<String, List<StopDTO>> suggestionCache = new HashMap<>();
     private TextField searchField;
     private PauseTransition debounce;
     private final StopService stopService = new StopService();
@@ -61,38 +62,47 @@ public class SearchController {
     }
 
     private void fetchSuggestions(String query) {
+        if (suggestionCache.containsKey(query)) {
+            Platform.runLater(() -> updateSuggestionsMenu(suggestionCache.get(query)));
+            return;
+        }
+
         new Thread(() -> {
-            List<StopDTO> allStops = stopService.getStopsByName(query);
-            Map<String, List<StopDTO>> grouped = allStops.stream()
-                    .collect(Collectors.groupingBy(StopDTO::getName));
-
-            Platform.runLater(() -> {
-                if (allStops.isEmpty()) {
-                    suggestionMenu.hide();
-                } else {
-                    suggestionMenu.getItems().clear();
-                    for (String name : grouped.keySet()) {
-                        MenuItem item = new MenuItem(name);
-                        item.setOnAction(e -> {
-                            searchField.setText(name);
-                            suggestionMenu.hide();
-                            stopMarkerDisplayer.clearMap();
-                            popupManager.clearRoutePreview();
-                            List<StopDTO> stops = grouped.get(name);
-                            if (stops != null && !stops.isEmpty()) {
-                                stopMarkerDisplayer.showMultipleStops(stops, false);
-                            }
-                        });
-                        suggestionMenu.getItems().add(item);
-                    }
-
-                    if (!suggestionMenu.isShowing()) {
-                        suggestionMenu.show(searchField, Side.BOTTOM, 0, 0);
-                    }
-                }
-            });
+            List<StopDTO> stops = stopService.getStopsByName(query);
+            suggestionCache.put(query, stops);
+            Platform.runLater(() -> updateSuggestionsMenu(stops));
         }).start();
     }
+
+
+    private void updateSuggestionsMenu(List<StopDTO> stops) {
+        Map<String, List<StopDTO>> grouped = stops.stream()
+                .collect(Collectors.groupingBy(StopDTO::getName));
+
+        suggestionMenu.getItems().clear();
+
+        for (String name : grouped.keySet()) {
+            MenuItem item = new MenuItem(name);
+            item.setOnAction(e -> {
+                searchField.setText(name);
+                suggestionMenu.hide();
+                stopMarkerDisplayer.clearMap();
+                popupManager.clearRoutePreview();
+                List<StopDTO> selectedStops = grouped.get(name);
+                if (selectedStops != null && !selectedStops.isEmpty()) {
+                    stopMarkerDisplayer.showMultipleStops(selectedStops, false);
+                }
+            });
+            suggestionMenu.getItems().add(item);
+        }
+
+        if (!suggestionMenu.isShowing() && !grouped.isEmpty()) {
+            suggestionMenu.show(searchField, Side.BOTTOM, 0, 0);
+        } else if (grouped.isEmpty()) {
+            suggestionMenu.hide();
+        }
+    }
+
 
     public void performSearch() {
         String query = searchField.getText().trim();

@@ -49,7 +49,7 @@ public class MainViewController {
         );
 
         searchController.setupSearchField();
-        routePlannerController.setupSuggestionHandlers();
+        //routePlannerController.setupSuggestionHandlers();
         routePlannerController.setDefaultDateTime();
     }
 
@@ -70,8 +70,8 @@ public class MainViewController {
     @FXML public void onSwapStops() { routePlannerController.swapStops(); }
     @FXML public void onSearch() { searchController.performSearch(); }
     @FXML public void onPlanRoute() { routePlannerController.planRoute(); }
-    @FXML public void onDepartureKeyTyped() { routePlannerController.handleDepartureSuggestions(); }
-    @FXML public void onArrivalKeyTyped() { routePlannerController.handleArrivalSuggestions(); }
+    //@FXML public void onDepartureKeyTyped() { routePlannerController.handleDepartureSuggestions(); }
+    //@FXML public void onArrivalKeyTyped() { routePlannerController.handleArrivalSuggestions(); }
     @FXML
     public void onToggleRoutePlanner(ActionEvent event) {
         // Térképes panel láthatóságának váltása
@@ -88,7 +88,7 @@ public class MainViewController {
     @FXML public void onSetNow() { routePlannerController.onSetNow(); }
 
     public void javaLog(String message) { mapController.logFromJavaScript(message);
-    System.out.println("JS:" + message);}
+        System.out.println("JS:" + message);}
     public void javaGetStopDetails(String stopId, String name, double lat, double lon) {
         mapController.handleStopDetails(stopId, name, lat, lon);
     }

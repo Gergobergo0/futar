@@ -605,6 +605,7 @@ public class TransitRoute {
    * @throws IOException if the JSON Element is invalid with respect to TransitRoute
    */
   public static void validateJsonElement(JsonElement jsonElement) throws IOException {
+    /*
       if (jsonElement == null) {
         if (!TransitRoute.openapiRequiredFields.isEmpty()) { // has required fields but JSON element is null
           throw new IllegalArgumentException(String.format("The required field(s) %s in TransitRoute is not found in the empty JSON string", TransitRoute.openapiRequiredFields.toString()));
@@ -659,7 +660,7 @@ public class TransitRoute {
       // validate the optional field `style`
       if (jsonObj.get("style") != null && !jsonObj.get("style").isJsonNull()) {
         TransitRouteStyle.validateJsonElement(jsonObj.get("style"));
-      }
+      }*/
   }
 
   public static class CustomTypeAdapterFactory implements TypeAdapterFactory {

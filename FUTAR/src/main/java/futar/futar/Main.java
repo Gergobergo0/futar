@@ -12,7 +12,7 @@ public class Main extends Application {
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("/fxml/main_view.fxml"));
         Scene scene = new Scene(loader.load());
 
-        stage.setTitle("FUTÁR Kliens");
+        stage.setTitle("FUTÁR");
         stage.setScene(scene);
         stage.show();
     }
