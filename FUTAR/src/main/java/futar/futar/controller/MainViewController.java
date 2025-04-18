@@ -1,10 +1,16 @@
 package futar.futar.controller;
 
+import futar.futar.context.ApplicationContext;
 import futar.futar.controller.RoutePlannerController;
 import futar.futar.controller.SearchController;
 import futar.futar.controller.map.MapController;
+import futar.futar.model.gtfs.*;
+import futar.futar.persistence.GtfsDownloader;
+import futar.futar.persistence.GtfsExtractor;
+import futar.futar.persistence.GtfsParser;
 import futar.futar.view.FavoritesDialogBuilder;
 import javafx.animation.PauseTransition;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.Dialog;
@@ -12,9 +18,8 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
+import java.util.List;
 
-
-import java.awt.*;
 import javafx.event.ActionEvent;
 
 public class MainViewController {
@@ -45,12 +50,19 @@ public class MainViewController {
                 hourSpinner, minuteSpinner,
                 timeField,
                 timeModeBox,
-                mapController.getPopupManager()  // 💡 hiányzó paraméter
+                mapController.getPopupManager()  // 💡 hiányzó paraméte
+
         );
 
         searchController.setupSearchField();
         //routePlannerController.setupSuggestionHandlers();
         routePlannerController.setDefaultDateTime();
+        new Thread(() -> {
+            ApplicationContext.gtfs(); // ez automatikusan inicializál
+            Platform.runLater(() -> {
+                System.out.println("✅ GTFS betöltve háttérszálon.");
+            });
+        }).start();
     }
 
     @FXML public void onShowFavorites() {

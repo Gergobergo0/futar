@@ -1,0 +1,4 @@
+- esetleg valami töltőképernyő
+- gtfs letöltéseket hetente időzíteni
+- útvonaltervezésnél gtfsből de vizsgálja felül az útvonalat api kérésekkel
+- parser elmentése h ne minden indításnál töltse be csak ha menetrendi változás van

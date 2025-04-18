@@ -2,6 +2,7 @@ package futar.futar.controller;
 
 import futar.futar.controller.map.PopupManager;
 import futar.futar.model.StopDTO;
+import futar.futar.service.GtfsRoutePlannerService;
 import futar.futar.service.StopService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -22,7 +23,7 @@ import javafx.util.Duration;
 public class RoutePlannerController {
     private final Spinner<Integer> hourSpinner;
     private final Spinner<Integer> minuteSpinner;
-    private final RoutePlannerService routePlannerService = new RoutePlannerService();
+    //private final RoutePlannerService routePlannerService = new RoutePlannerService();
     private final TextField departureField;
     private final TextField arrivalField;
     private final DatePicker datePicker;
@@ -32,6 +33,8 @@ public class RoutePlannerController {
     private final ContextMenu arrivalSuggestionMenu = new ContextMenu();
     private final StopService stopService = new StopService();
     private final PopupManager popupManager;
+    // private final RoutePlannerService routePlannerService = new RoutePlannerService();
+    private final GtfsRoutePlannerService routePlannerService = new GtfsRoutePlannerService();
 
     public RoutePlannerController(TextField departureField, TextField arrivalField,
                                   DatePicker datePicker,
@@ -84,6 +87,7 @@ public class RoutePlannerController {
         String departure = departureField.getText().trim();
         String arrival = arrivalField.getText().trim();
         String timeText = String.format("%02d:%02d", hourSpinner.getValue(), minuteSpinner.getValue());
+
         String date = datePicker.getValue() != null ? datePicker.getValue().toString() : null;
         String mode = timeModeBox.getValue();
 
@@ -95,16 +99,20 @@ public class RoutePlannerController {
         System.out.println("Útvonaltervezés: " + departure + " → " + arrival + " @ " + date + " " + timeText + " (" + mode + ")");
 
         // 🔽 Itt hívjuk meg a választási lehetőségeket
+
         new Thread(() -> {
-            List<RoutePlannerService.RoutePath> routes = routePlannerService.findTopDirectRoutes(departure, arrival, 3);
+            List<GtfsRoutePlannerService.RoutePath> routes =
+                    routePlannerService.findTopDirectRoutes(departure, arrival, timeText, 3);
 
             Platform.runLater(() -> {
                 System.out.println("\n--- TOP 3 ÚTVONAL a „" + departure + " → " + arrival + "” között ---");
                 routePlannerService.printDirectRoutesPretty(routes);
+                System.out.println("Útvonaltervezés lefutott!");
+
             });
         }).start();
 
-        routePlannerService.printNearbyStops("Újbuda-központ M");
+
 
     }
 
