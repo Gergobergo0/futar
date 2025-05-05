@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.image.ImageView?>
+
+<StackPane xmlns:fx="http://javafx.com/fxml"
+           fx:controller="futar.futar.controller.SplashController"
+           style="-fx-background-color: #f3f2f2;">
+    <VBox alignment="CENTER" spacing="30">
+
+
+        <Label text="FUTÁR"
+               style="-fx-text-fill: #212121; -fx-font-size: 28px; -fx-font-weight: bold;" />
+
+        <ProgressIndicator fx:id="progressIndicator" />
+
+        <Label fx:id="statusLabel"
+               text="Szerver inicializálása..."
+               style="-fx-text-fill: #bbbbbb; -fx-font-size: 14px;" />
+    </VBox>
+</StackPane>

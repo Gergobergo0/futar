@@ -1,127 +1,156 @@
 package futar.futar.service;
 
 import futar.futar.api.ApiClientProvider;
-import futar.futar.model.DepartureDTO;
-import futar.futar.model.StopDTO;
+import futar.futar.model.PathStep;
+import futar.futar.model.TransitRoute;
 import org.openapitools.client.api.DefaultApi;
+import org.openapitools.client.model.*;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.time.*;
+import java.util.List;
 
 public class RoutePlannerService {
 
-    private final StopService stopService = new StopService();
-    private final DepartureService departureService = new DepartureService(new DefaultApi(ApiClientProvider.getClient()));
+    private final DefaultApi api;
 
-    public Optional<RoutePath> findBestRoute(String fromStopName, String toStopName) {
-        StopDTO from = stopService.getStopByName(fromStopName);
-        StopDTO to = stopService.getStopByName(toStopName);
-
-        if (from == null || to == null) return Optional.empty();
-
-        List<DepartureDTO> departures = departureService.getDepartures(from.getId());
-
-        for (DepartureDTO dep : departures) {
-            List<StopDTO> route = stopService.getStopsByTripId(dep.getTripId());
-
-            int fromIndex = findStopIndex(route, from);
-            int toIndex = findStopIndex(route, to);
-
-
-            if (fromIndex >= 0 && toIndex > fromIndex) {
-                List<StopDTO> segment = route.subList(fromIndex, toIndex + 1);
-                String depTime = dep.getFormattedTime(); // már formázott pl. "14:09"
-                String arrTime = departureService.getArrivalTimeAtStop(dep.getTripId(), segment.get(segment.size() - 1).getId()).orElse("?");
-                return Optional.of(new RoutePath(dep.getTripId(), segment, depTime, arrTime));
-            }
-        }
-
-        return Optional.empty(); // nincs közvetlen út
+    public RoutePlannerService() {
+        this.api = new DefaultApi(ApiClientProvider.getClient());
     }
 
-    public List<RoutePath> findTopDirectRoutes(String fromStopName, String toStopName, int limit) {
-        double radiusMeters = 100.0;
+    public TransitRoute planRoute(String fromName, double fromLat, double fromLon,
+                                  String toName, double toLat, double toLon,
+                                  String time, String date,
+                                  String mode, boolean arriveBy) throws Exception {
 
-        List<StopDTO> fromStops = stopService.getNearbyStopsIncludingCenter(fromStopName, radiusMeters);
-        List<StopDTO> toStops = stopService.getNearbyStopsIncludingCenter(toStopName, radiusMeters);
+        String fromPlace = String.format("%s::%f,%f", fromName, fromLat, fromLon);
+        String toPlace = String.format("%s::%f,%f", toName, toLat, toLon);
 
-        Map<String, RoutePath> routeMap = new HashMap<>(); // kulcs: tripId
+        List<TraverseMode> modes = switch (mode.toUpperCase()) {
+            case "WALK" -> List.of(TraverseMode.WALK);
+            case "BICYCLE" -> List.of(TraverseMode.BICYCLE);
+            case "TRANSIT" -> List.of(TraverseMode.TRANSIT);
+            case "TRANSIT,WALK", "WALK,TRANSIT" -> List.of(TraverseMode.TRANSIT, TraverseMode.WALK);
+            default -> throw new IllegalArgumentException("Ismeretlen mód: " + mode);
+        };
 
-        for (StopDTO from : fromStops) {
-            List<DepartureDTO> departures = departureService.getDepartures(from.getId());
+        // ✅ Epoch millis számítása
+        long dateTimeMillis = LocalDate.parse(date)
+                .atTime(LocalTime.parse(time))
+                .atZone(ZoneId.of("Europe/Budapest"))
+                .toInstant()
+                .toEpochMilli();
 
-            for (DepartureDTO dep : departures) {
-                List<StopDTO> route = stopService.getStopsByTripId(dep.getTripId());
+        PlanTripResponse response = api.planTrip(
+                Dialect.OTP,
+                fromPlace,
+                toPlace,
+                modes,                // ✅ List<TraverseMode>
+                null,                 // ApiVersion (nem kell megadni)
+                null,                 // appVersion
+                null,                 // includeReferences
+                date,                 // pl. "2025-05-05"
+                time,                 // pl. "19:58"
+                null,                 // shouldBuyTickets
+                true,                 // showIntermediateStops
+                arriveBy,             // boolean
+                null,                 // wheelchair
+                null, null, null,     // triangle factors
+                null,                 // optimize
+                null,                 // walkProfile
+                null                  // numItineraries
+        );
 
-                for (StopDTO to : toStops) {
-                    int fromIndex = findStopIndex(route, from);
-                    int toIndex = findStopIndex(route, to);
 
-                    if (fromIndex >= 0 && toIndex > fromIndex) {
-                        List<StopDTO> segment = route.subList(fromIndex, toIndex + 1);
-                        String arrTime = departureService.getArrivalTimeAtStop(dep.getTripId(), to.getId()).orElse("?");
 
-                        // csak akkor rakjuk be, ha még nincs benne ez a tripId
-                        routeMap.putIfAbsent(dep.getTripId(), new RoutePath(dep.getTripId(), segment, dep.getFormattedTime(), arrTime));
-                    }
+        TripPlan plan = response.getData().getEntry().getPlan();
+        if (plan == null || plan.getItineraries() == null || plan.getItineraries().isEmpty()) {
+            return null;
+        }
+
+        Itinerary itinerary = plan.getItineraries().get(0);
+        TransitRoute route = new TransitRoute();
+
+        for (Leg leg : itinerary.getLegs()) {
+            String from = leg.getFrom().getName();
+            String to = leg.getTo().getName();
+            String modeStr = leg.getMode().toString();
+
+            String departure = formatAnyTime(leg.getStartTime());
+            String arrival = formatAnyTime(leg.getEndTime());
+            String routeId = leg.getRouteId();
+            String tripId = leg.getTripId();
+            String routeName = leg.getRouteShortName();
+            String label = "[" + modeStr + "] " + (routeName != null ? routeName : (tripId != null ? tripId : "N/A"));
+            String stopId = leg.getFrom().getStopId();
+
+            PathStep step = new PathStep(label, from, to, departure, arrival, tripId, modeStr, stopId);
+            route.addStep(step);
+        }
+
+        route.setStartTime(parseToLocalTime(itinerary.getStartTime()));
+        route.setArrivalTime(parseToLocalTime(itinerary.getEndTime()));
+
+        return route;
+    }
+
+
+    // ─────────────────────────────────────────────
+    // ÚJ időformázók millis alapú mezőkhöz
+    // ─────────────────────────────────────────────
+
+    private String formatTimeFromMillis(Long millis) {
+        if (millis == null) return null;
+        return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
+    }
+
+    private LocalTime formatTimeToLocalTime(OffsetDateTime dateTime) {
+        if (dateTime == null) return null;
+        return dateTime.toLocalTime();
+    }
+
+    private String formatTimeFromOffsetDateTime(OffsetDateTime dateTime) {
+        if (dateTime == null) return null;
+        return dateTime.toLocalTime().toString();
+    }
+
+    private String formatAnyTime(Object time) {
+        try {
+            if (time instanceof OffsetDateTime odt) {
+                return odt.toLocalTime().toString();
+            } else if (time instanceof Long millis) {
+                return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
+            } else {
+                // Esetleg stringből próbáljunk longot olvasni
+                String raw = time.toString();
+                if (raw.matches("\\d{13}")) {
+                    long millis = Long.parseLong(raw);
+                    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
                 }
             }
+        } catch (Exception e) {
+            System.err.println("Nem sikerült időt értelmezni: " + time + " → " + e.getMessage());
         }
-
-        return routeMap.values().stream()
-                .sorted(Comparator.comparingInt(r -> r.stops().size()))
-                .limit(limit)
-                .collect(Collectors.toList());
+        return null;
     }
 
-
-    private int findStopIndex(List<StopDTO> route, StopDTO target) {
-        for (int i = 0; i < route.size(); i++) {
-            StopDTO stop = route.get(i);
-            // ID vagy név alapján történő egyezés
-            if (stop.getId().equals(target.getId()) || stop.getName().equalsIgnoreCase(target.getName())) {
-                return i;
+    private LocalTime parseToLocalTime(Object time) {
+        try {
+            if (time instanceof OffsetDateTime odt) {
+                return odt.toLocalTime();
+            } else if (time instanceof Long millis) {
+                return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
+            } else {
+                String raw = time.toString();
+                if (raw.matches("\\d{13}")) {
+                    long millis = Long.parseLong(raw);
+                    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
+                }
             }
+        } catch (Exception e) {
+            System.err.println("Nem sikerült időt konvertálni LocalTime-ra: " + time + " → " + e.getMessage());
         }
-        return -1;
+        return null;
     }
 
 
-    public void printDirectRoutesPretty(List<RoutePath> routes) {
-        System.out.println("⚠️ route count = " + routes.size());
-
-        for (RoutePath routePath : routes) {
-            List<StopDTO> route = routePath.stops();
-            if (route.isEmpty()) continue;
-
-            StopDTO start = route.get(0);
-            StopDTO end = route.get(route.size() - 1);
-
-            String tripId = routePath.tripId();
-            String routeName = departureService.getRouteNameByTripId(tripId).orElse("Ismeretlen járat");
-
-            System.out.println("\n🚌 " + routeName);
-            System.out.println("Indulás: " + start.getName() + " [" + start.getId() + "] – " + routePath.departureTime());
-            System.out.println("Érkezés: " + end.getName() + " [" + end.getId() + "] – " + routePath.arrivalTime());
-            System.out.println("\nMegállók:");
-            for (StopDTO stop : route) {
-                System.out.println(" - " + stop.getName());
-            }
-            System.out.println("\nLeszállás: " + end.getName());
-            System.out.println("──────────────────────────────────────────────");
-        }
-    }
-
-    public record RoutePath(String tripId, List<StopDTO> stops, String departureTime, String arrivalTime) {
-    }
-
-
-    // Debughoz használható:
-    public void printNearbyStops(String stopName) {
-        List<StopDTO> nearby = stopService.getNearbyStopsIncludingCenter(stopName, 150);
-        System.out.println("🔎 Megállók „" + stopName + "” környékén:");
-        for (StopDTO s : nearby) {
-            System.out.println(" - " + s.getName() + " [" + s.getId() + "]");
-        }
-    }
 }

@@ -1,46 +1,39 @@
 package futar.futar.controller.map;
 
-import futar.futar.api.TripApi;
-import futar.futar.model.StopDTO;
+import futar.futar.model.DepartureDTO;
 import futar.futar.service.DepartureService;
-import futar.futar.view.RouteViewBuilder;
+import futar.futar.view.StopViewBuilder;
 import javafx.application.Platform;
 import netscape.javascript.JSObject;
 import org.openapitools.client.api.DefaultApi;
 
 import java.util.List;
-import java.util.Optional;
 
-public class RouteInfoDisplayer {
+public class StopInfoDisplayer {
     private final PopupManager popupManager;
     private final DepartureService departureService;
 
-    public RouteInfoDisplayer(PopupManager popupManager) {
+    public StopInfoDisplayer(PopupManager popupManager) {
         this.popupManager = popupManager;
         this.departureService = new DepartureService(new DefaultApi());
     }
 
-    public void displayRouteInfo(String tripId) {
+    public void displayStopInfo(String stopId, String stopName, double lat, double lon) {
+        popupManager.clearFloatingPopup();
+
         new Thread(() -> {
             try {
-                System.out.println("RouteINFOTripID==" + tripId);
-                TripApi tripApi = new TripApi();
-                List<StopDTO> stops = tripApi.getStopsByTrip(tripId);
+                List<DepartureDTO> departures = departureService.getDeparturesForStop(stopId, lat, lon);
+                if (departures == null || departures.isEmpty()) return;
 
-                if (stops.isEmpty()) return;
+                String html = StopViewBuilder.buildFloatingPopup(stopName, departures);
 
-                Optional<String> routeNameOpt = departureService.getRouteNameByTripId(tripId);
-                String routeName = routeNameOpt.orElse("Ismeretlen járat");
-                String html = RouteViewBuilder.buildAsTextClick(routeName, stops);
-
-                // 🔐 Escapelés, hogy a JS ne szakadjon meg
-                String escapedRouteName = escapeJs(routeName);
+                String escapedTitle = escapeJs(stopName);
                 String escapedHtml = escapeJs(html);
-                popupManager.clearFloatingPopup();
 
                 Platform.runLater(() -> {
                     JSObject window = (JSObject) popupManager.getWebEngine().executeScript("window");
-                    window.call("showFloatingPopup", escapedRouteName, escapedHtml);
+                    window.call("showFloatingPopup", escapedTitle, escapedHtml);
                 });
 
             } catch (Exception e) {
@@ -57,5 +50,4 @@ public class RouteInfoDisplayer {
                 .replace("\n", "")
                 .replace("\r", "");
     }
-
 }

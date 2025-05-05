@@ -1,14 +1,17 @@
 package futar.futar.controller;
-
+import futar.futar.api.ApiClientProvider;
 import futar.futar.controller.map.PopupManager;
+import futar.futar.service.DepartureService;
+import futar.futar.view.RoutePlanBuilder;
 import futar.futar.model.StopDTO;
-import futar.futar.service.GtfsRoutePlannerService;
 import futar.futar.service.StopService;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Side;
 import javafx.scene.control.*;
 import futar.futar.utils.UIUtils;
+import futar.futar.model.TransitRoute;
+import futar.futar.service.RoutePlannerService;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -17,10 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
-import futar.futar.service.RoutePlannerService;
+
 import javafx.util.Duration;
+import org.openapitools.client.api.DefaultApi;
 
 public class RoutePlannerController {
+
     private final Spinner<Integer> hourSpinner;
     private final Spinner<Integer> minuteSpinner;
     //private final RoutePlannerService routePlannerService = new RoutePlannerService();
@@ -33,8 +38,15 @@ public class RoutePlannerController {
     private final ContextMenu arrivalSuggestionMenu = new ContextMenu();
     private final StopService stopService = new StopService();
     private final PopupManager popupManager;
+    private final RoutePlannerService routePlannerService = new RoutePlannerService();
+
     // private final RoutePlannerService routePlannerService = new RoutePlannerService();
-    private final GtfsRoutePlannerService routePlannerService = new GtfsRoutePlannerService();
+    //private final OtpRoutePlannerService otpRoutePlannerService = new OtpRoutePlannerService();
+    public final DepartureService departureService;
+    private Spinner<Integer> walkDistanceSpinner;
+    //private final R5RoutePlannerService r5RoutePlannerService = new R5RoutePlannerService();
+    private ComboBox<String> walkSpeedBox;
+
 
     public RoutePlannerController(TextField departureField, TextField arrivalField,
                                   DatePicker datePicker,
@@ -49,10 +61,21 @@ public class RoutePlannerController {
         this.timeField = timeField;
         this.timeModeBox = timeModeBox;
         this.popupManager = popupManager;
+        this.departureService = new DepartureService(new DefaultApi(ApiClientProvider.getClient()));
         setupDebouncedSearch(departureField, fromDebounce, this::handleDepartureSuggestionsDebounced);
         setupDebouncedSearch(arrivalField, toDebounce, this::handleArrivalSuggestionsDebounced);
 
+
         setupFocusListeners();
+
+    }
+    public void setWalkControls(Spinner<Integer> walkSpinner, ComboBox<String> speedBox) {
+        this.walkDistanceSpinner = walkSpinner;
+        this.walkSpeedBox = speedBox;
+
+        // Alapértékek beállítása, ha szükséges
+        walkSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(100, 5000, 1500, 100));
+        speedBox.setValue("ÁTLAGOS");
     }
 
     private void handleDepartureSuggestionsDebounced(String query) {
@@ -87,34 +110,81 @@ public class RoutePlannerController {
         String departure = departureField.getText().trim();
         String arrival = arrivalField.getText().trim();
         String timeText = String.format("%02d:%02d", hourSpinner.getValue(), minuteSpinner.getValue());
-
         String date = datePicker.getValue() != null ? datePicker.getValue().toString() : null;
         String mode = timeModeBox.getValue();
+        int maxWalkDistance = walkDistanceSpinner.getValue();
+        double walkSpeed;
+
+        switch (walkSpeedBox.getValue()) {
+            case "LASSÚ" -> walkSpeed = 0.8;
+            case "GYORS" -> walkSpeed = 1.5;
+            case "FUTÁS" -> walkSpeed = 2.0;
+            default -> walkSpeed = 1.2; // ÁTLAGOS
+        }
 
         if (departure.isEmpty() || arrival.isEmpty() || date == null || timeText.isEmpty() || mode == null) {
             UIUtils.showAlert("Kérlek, tölts ki minden mezőt az útvonaltervezéshez.");
             return;
         }
 
-        System.out.println("Útvonaltervezés: " + departure + " → " + arrival + " @ " + date + " " + timeText + " (" + mode + ")");
+        System.out.println("Útvonaltervezés (OTP): " + departure + " → " + arrival + " @ " + date + " " + timeText + " (" + mode + ")");
+        String transportMode = "TRANSIT,WALK";
 
-        // 🔽 Itt hívjuk meg a választási lehetőségeket
+        StopDTO fromStop = stopService.getStopByName(departure);
+        StopDTO toStop = stopService.getStopByName(arrival);
+        String fromCoords = fromStop.getLat() + "," + fromStop.getLon();
+        String toCoords = toStop.getLat() + "," + toStop.getLon();
+
+
+
+
+
+        if (fromCoords == null || toCoords == null) {
+            UIUtils.showAlert("Ismeretlen helyszín: „" + departure + "” vagy „" + arrival + "”.");
+            return;
+        }
 
         new Thread(() -> {
-            List<GtfsRoutePlannerService.RoutePath> routes =
-                    routePlannerService.findTopDirectRoutes(departure, arrival, timeText, 3);
+            try {
+                boolean arriveBy = mode.equals("Érkezés");
 
-            Platform.runLater(() -> {
-                System.out.println("\n--- TOP 3 ÚTVONAL a „" + departure + " → " + arrival + "” között ---");
-                routePlannerService.printDirectRoutesPretty(routes);
-                System.out.println("Útvonaltervezés lefutott!");
+                RoutePlannerService planner = new RoutePlannerService();
+                TransitRoute route = routePlannerService.planRoute(
+                        departure,
+                        fromStop.getLat(), fromStop.getLon(),
+                        arrival,
+                        toStop.getLat(), toStop.getLon(),
+                        timeText,
+                        date,
+                        transportMode,
+                        arriveBy
+                );
 
-            });
+
+                Platform.runLater(() -> {
+                    if (route != null && !route.getSteps().isEmpty()) {
+                        RoutePlanBuilder.show(route.getSteps(), departureService, popupManager);
+                    } else {
+                        UIUtils.showAlert("Nincs találat a keresett útvonalra.");
+                    }
+                });
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                Platform.runLater(() -> UIUtils.showAlert("Hiba történt az útvonaltervezés során:\n" + e.getMessage()));
+            }
         }).start();
 
 
-
     }
+
+
+
+
+
+
+
 
 
 

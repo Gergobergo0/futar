@@ -1,6 +1,8 @@
 package futar.futar.service;
 
+import futar.futar.api.TripApi;
 import futar.futar.model.DepartureDTO;
+import futar.futar.model.StopDTO;
 import org.openapitools.client.model.*;
 import org.openapitools.client.api.DefaultApi;
 
@@ -119,7 +121,6 @@ public class DepartureService {
                     .flatMap(group -> group.getStopTimes().stream())
                     .map(stopTime -> {
                         String tripId = stopTime.getTripId();
-                        System.out.println("TRIP-ID:" + tripId);
                         String routeShortName = "?";
                         String tripHeadsign = "?";
 
@@ -153,6 +154,8 @@ public class DepartureService {
     }
     public Optional<String> getRouteNameByTripId(String tripId) {
         try {
+
+            System.out.println("TRIP ID==" + tripId);
             TripDetailsOTPMethodResponse response = api.getTripDetails(
                     Dialect.OTP, null, tripId, null, null, null, "1.0", null, null
             );
@@ -182,6 +185,15 @@ public class DepartureService {
 
         return Optional.empty();
     }
+    public List<StopDTO> getStopsByTripId(String tripId) {
+        try {
+            TripApi tripApi = new TripApi();
+            return tripApi.getStopsByTrip(tripId);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return List.of();
+        }
+    }
 
     public Optional<String> getArrivalTimeAtStop(String tripId, String stopId) {
         try {
@@ -206,6 +218,14 @@ public class DepartureService {
         }
         return Optional.empty();
     }
+    public List<DepartureDTO> getDeparturesForStop(String stopId, double lat, double lon) {
+        List<DepartureDTO> precise = getDepartures(stopId);
+        if (precise != null && !precise.isEmpty()) return precise;
+
+        // Ha nincs eredmény, próbáljuk GPS alapján lekérni
+        return getNearbyDepartures(lat, lon);
+    }
+
 
 
 

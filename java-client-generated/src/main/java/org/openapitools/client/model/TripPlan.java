@@ -59,7 +59,7 @@ public class TripPlan {
   public static final String SERIALIZED_NAME_DATE = "date";
   @SerializedName(SERIALIZED_NAME_DATE)
   @javax.annotation.Nullable
-  private OffsetDateTime date;
+  private Long date;
 
   public static final String SERIALIZED_NAME_FROM = "from";
   @SerializedName(SERIALIZED_NAME_FROM)
@@ -79,7 +79,7 @@ public class TripPlan {
   public TripPlan() {
   }
 
-  public TripPlan date(@javax.annotation.Nullable OffsetDateTime date) {
+  public TripPlan date(@javax.annotation.Nullable Long date) {
     this.date = date;
     return this;
   }
@@ -89,11 +89,11 @@ public class TripPlan {
    * @return date
    */
   @javax.annotation.Nullable
-  public OffsetDateTime getDate() {
+  public Long getDate() {
     return date;
   }
 
-  public void setDate(@javax.annotation.Nullable OffsetDateTime date) {
+  public void setDate(@javax.annotation.Nullable Long date) {
     this.date = date;
   }
 
@@ -240,7 +240,9 @@ public class TripPlan {
    * @param jsonElement JSON Element
    * @throws IOException if the JSON Element is invalid with respect to TripPlan
    */
+
   public static void validateJsonElement(JsonElement jsonElement) throws IOException {
+    /*
       if (jsonElement == null) {
         if (!TripPlan.openapiRequiredFields.isEmpty()) { // has required fields but JSON element is null
           throw new IllegalArgumentException(String.format("The required field(s) %s in TripPlan is not found in the empty JSON string", TripPlan.openapiRequiredFields.toString()));
@@ -276,7 +278,7 @@ public class TripPlan {
             Itinerary.validateJsonElement(jsonArrayitineraries.get(i));
           };
         }
-      }
+      }*/
   }
 
   public static class CustomTypeAdapterFactory implements TypeAdapterFactory {

@@ -5,7 +5,83 @@
     <title>Térkép</title>
     <style>
         html, body, #map { height: 100%; margin: 0; }
+        .floating-popup {
+            position: absolute;
+            top: 100px;
+            left: 100px;
+            z-index: 10000;
+            background-color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+            width: 360px;
+            max-height: 500px;
+            overflow: hidden;
+            font-family: 'Segoe UI', sans-serif;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.2s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.98); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .popup-header {
+            cursor: move;
+            position: relative;
+            padding: 14px 20px 10px 16px;
+            background: #f5f5f5;
+            font-size: 17px;
+            font-weight: 600;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .popup-close-btn {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 20px;
+            color: #666;
+            cursor: pointer;
+        }
+
+        .popup-close-btn:hover {
+            color: #c00;
+        }
+
+        .popup-content {
+            padding: 14px 18px;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+
+        .popup-content ul {
+            padding-left: 18px;
+            margin: 0;
+        }
+
+        .popup-content li {
+            margin-bottom: 8px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .popup-content a {
+            color: #3367d6;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .popup-content a:hover {
+            text-decoration: underline;
+        }
+
+
     </style>
+
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
@@ -87,11 +163,78 @@
 
 
     function updatePopupContent(stopName, htmlContent) {
+        logToJava("updatePopupContent()")
         if (selectedMarker) {
             selectedMarker.setPopupContent("<b>" + stopName + "</b><br>" + htmlContent);
-            selectedMarker.openPopup(); // 💥 ez kell
+            selectedMarker.openPopup();
+        } else {
+            // ➕ Marker nélküli nézethez: popup megjelenítés a térkép közepén
+            var center = map.getCenter();
+            var tempPopup = L.popup()
+                .setLatLng(center)
+                .setContent("<b>" + stopName + "</b><br>" + htmlContent)
+                .openOn(map);
         }
+    }
+
+    window.showFloatingPopup = function (title, htmlContent) {
+        // Előző popup törlése (ha van)
+        logToJava("🧾 showFloatingPopup(title=" + title + ")");
+
+        let existingPopup = document.getElementById("floating-popup");
+        if (existingPopup) {
+            existingPopup.remove();
+            document.removeEventListener("click", closeOnOutsideClick);
         }
+
+        const popupDiv = document.createElement("div");
+        popupDiv.id = "floating-popup";
+        popupDiv.className = "floating-popup";
+
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "popup-header";
+        headerDiv.innerText = title;
+
+        const closeBtn = document.createElement("button");
+        closeBtn.className = "popup-close-btn";
+        closeBtn.innerHTML = "×";
+        closeBtn.onclick = () => {
+            popupDiv.remove();
+            document.removeEventListener("click", closeOnOutsideClick);
+        };
+
+        headerDiv.appendChild(closeBtn);
+
+        const contentDiv = document.createElement("div");
+        contentDiv.className = "popup-content";
+        contentDiv.innerHTML = htmlContent;
+
+        popupDiv.appendChild(headerDiv);
+        popupDiv.appendChild(contentDiv);
+
+        document.body.appendChild(popupDiv);
+        makePopupDraggable(popupDiv); // 👈 Új
+
+
+        // ⛔️ Bezárás, ha nem a popupra kattintunk
+        setTimeout(() => {
+            document.addEventListener("click", closeOnOutsideClick);
+        }, 0);
+
+        function closeOnOutsideClick(event) {
+            logToJava("closeOnOutsideClick()")
+            if (!popupDiv.contains(event.target)) {
+                popupDiv.remove();
+                document.removeEventListener("click", closeOnOutsideClick);
+            }
+        }
+
+
+    };
+
+
+
+
 
     window.onRouteClick = function(tripId) {
         if (window.java && window.java.handleRouteClick) {
@@ -101,6 +244,7 @@
         }
     }
     function clearRouteLine() {
+
         if (routeLine) {
             map.removeLayer(routeLine);
             routeLine = null;
@@ -140,6 +284,7 @@
     var routeMarkers = [];
 
     function showRouteLine(lat1, lng1, lat2, lng2, distanceKmText) {
+        logToJava("showRouteLine()")
         // Töröljük az előző vonalat és markereket
         if (routeLine) {
             map.removeLayer(routeLine);
@@ -178,6 +323,66 @@
             window.java.onPopupClosed();
         }
     });
+
+    function makePopupDraggable(popup) {
+        const header = popup.querySelector(".popup-header");
+        let offsetX = 0, offsetY = 0;
+        let isDragging = false;
+
+        header.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            offsetX = e.clientX - popup.offsetLeft;
+            offsetY = e.clientY - popup.offsetTop;
+            popup.style.transition = "none"; // ne animáljon húzás közben
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            popup.style.left = (e.clientX - offsetX) + "px";
+            popup.style.top = (e.clientY - offsetY) + "px";
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+        });
+    }
+    window.onRouteClick = function(tripId) {
+        logToJava("🔍 JS onRouteClick hívás: " + tripId);
+        if (window.java && window.java.handleRouteClick) {
+            window.java.handleRouteClick(tripId);
+        } else {
+            console.warn("⚠️ java.handleRouteClick nem elérhető");
+        }
+    };
+
+
+    window.showStopDetailsPopup = function(stopId, stopName, lat, lon) {
+        logToJava("🧪 showStopDetailsPopup() → ID: " + stopId + ", Name: " + stopName + ", Lat: " + lat + ", Lon: " + lon);
+        if (window.java && typeof window.java.javaGetStopDetails === 'function') {
+            window.java.javaGetStopDetails(stopId, stopName, lat, lon);
+        } else {
+            console.error("Java híd nem elérhető vagy javaGetStopDetails nem függvény");
+            logToJava("❌ java.javaGetStopDetails nem elérhető vagy nem függvény");
+            // Ellenőrizzük, mi van a java objektumban
+            if (window.java) {
+                console.log("Java objektum tulajdonságai:");
+                for (var prop in window.java) {
+                    console.log(" - " + prop + ": " + (typeof window.java[prop]));
+                }
+            }
+        }
+    };
+    window.onStopClick = function(stopId, stopName, lat, lon) {
+        logToJava("📍 onStopClick → " + stopName);
+        if (window.java && typeof window.java.javaGetStopDetails === 'function') {
+            window.java.javaGetStopDetails(stopId, stopName, lat, lon);
+        } else {
+            console.warn("❌ javaGetStopDetails nem elérhető");
+        }
+    };
+
+
+
 
 </script>
 </body>

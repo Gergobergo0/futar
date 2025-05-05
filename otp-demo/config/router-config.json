@@ -1,0 +1,10 @@
+{
+  "routingDefaults": {
+    "walkSpeed": 1.2,
+    "maxWalkDistance": 1500,
+    "transferSlack": "PT60S",
+    "boardSlack": "PT120S",
+    "alightSlack": "PT60S",
+    "timeZone": "Europe/Budapest"
+  }
+}

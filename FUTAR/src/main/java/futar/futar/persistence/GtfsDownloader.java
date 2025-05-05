@@ -9,8 +9,8 @@ import java.security.MessageDigest;
 
 public class GtfsDownloader {
     private static final String GTFS_URL = "https://bkk.hu/gtfs/budapest_gtfs.zip"; // TODO: cseréld ki BKK GTFS URL-re
-    private static final String DOWNLOAD_PATH = "data/gtfs.zip";
-    private static final String LAST_HASH_PATH = "data/gtfs.hash";
+    private static final String DOWNLOAD_PATH = "otp-demo/otp-data";
+    private static final String LAST_HASH_PATH = "otp-demo/otp-data/gtfs.hash";
 
     public static boolean isUpdated() throws Exception {
         byte[] newData = downloadBytes(GTFS_URL);

@@ -1,13 +1,7 @@
 package futar.futar.controller;
 
-import futar.futar.context.ApplicationContext;
-import futar.futar.controller.RoutePlannerController;
-import futar.futar.controller.SearchController;
 import futar.futar.controller.map.MapController;
-import futar.futar.model.gtfs.*;
-import futar.futar.persistence.GtfsDownloader;
-import futar.futar.persistence.GtfsExtractor;
-import futar.futar.persistence.GtfsParser;
+import futar.futar.utils.JavaConnector;
 import futar.futar.view.FavoritesDialogBuilder;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
@@ -15,10 +9,10 @@ import javafx.fxml.FXML;
 import javafx.scene.control.*;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.web.WebView;
 import javafx.util.Duration;
-import java.util.List;
 
 import javafx.event.ActionEvent;
 
@@ -42,7 +36,9 @@ public class MainViewController {
     @FXML
     public void initialize() {
         this.mapController = new MapController(mapView);
-        mapController.setJavaConnector(this);
+        JavaConnector connector = new JavaConnector(mapController);
+        mapController.setJavaConnector(connector);
+        mapController.finishInit();
         this.searchController = new SearchController(searchField, debounce, mapController);
         this.routePlannerController = new RoutePlannerController(
                 departureField, arrivalField,
@@ -51,18 +47,18 @@ public class MainViewController {
                 timeField,
                 timeModeBox,
                 mapController.getPopupManager()  // 💡 hiányzó paraméte
-
         );
 
         searchController.setupSearchField();
         //routePlannerController.setupSuggestionHandlers();
+        routePlannerController.setWalkControls(walkDistanceSpinner, walkSpeedBox);
+
         routePlannerController.setDefaultDateTime();
-        new Thread(() -> {
-            ApplicationContext.gtfs(); // ez automatikusan inicializál
-            Platform.runLater(() -> {
-                System.out.println("✅ GTFS betöltve háttérszálon.");
-            });
-        }).start();
+
+        mapController.getFavoriteManager().load();
+
+
+
     }
 
     @FXML public void onShowFavorites() {
@@ -78,7 +74,11 @@ public class MainViewController {
         dialog.showAndWait();
     }
 
+    @FXML
+    private Spinner<Integer> walkDistanceSpinner;
 
+    @FXML
+    private ComboBox<String> walkSpeedBox;
     @FXML public void onSwapStops() { routePlannerController.swapStops(); }
     @FXML public void onSearch() { searchController.performSearch(); }
     @FXML public void onPlanRoute() { routePlannerController.planRoute(); }
@@ -91,6 +91,15 @@ public class MainViewController {
         routePlannerPanel.setVisible(!visible);
         routePlannerPanel.setManaged(!visible);
     }
+    @FXML private HBox advancedSettingsBox;
+
+    @FXML
+    public void onToggleAdvancedSettings() {
+        boolean show = !advancedSettingsBox.isVisible();
+        advancedSettingsBox.setVisible(show);
+        advancedSettingsBox.setManaged(show);
+    }
+
 
     @FXML
     public void onIncreaseHour() { routePlannerController.onIncreaseHour(); }
@@ -101,9 +110,6 @@ public class MainViewController {
 
     public void javaLog(String message) { mapController.logFromJavaScript(message);
         System.out.println("JS:" + message);}
-    public void javaGetStopDetails(String stopId, String name, double lat, double lon) {
-        mapController.handleStopDetails(stopId, name, lat, lon);
-    }
     public void addFavoriteStop() { mapController.addFavoriteStop(); }
     public void toggleFavorite() { mapController.toggleFavorite(); }
     public void handleRouteClick(String tripId) { mapController.handleRouteClick(tripId); }

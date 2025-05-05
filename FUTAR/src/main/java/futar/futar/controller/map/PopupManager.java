@@ -8,7 +8,9 @@ import futar.futar.service.DepartureService;
 import futar.futar.service.FavoriteManager;
 import futar.futar.service.StopService;
 import futar.futar.view.DepartureViewBuilder;
+import futar.futar.view.StopViewBuilder;
 import javafx.application.Platform;
+import javafx.scene.web.WebEngine;
 import netscape.javascript.JSObject;
 import org.openapitools.client.api.DefaultApi;
 import futar.futar.controller.map.StopMarkerDisplayer;
@@ -56,6 +58,7 @@ public class PopupManager {
     }
 
     private void fetchAndUpdatePopup(String stopId, String name, double lat, double lon) {
+        /*
         new Thread(() -> {
             try {
                 DepartureService service = new DepartureService(new DefaultApi(ApiClientProvider.getClient()));
@@ -74,7 +77,35 @@ public class PopupManager {
             } catch (Exception e) {
                 e.printStackTrace();
             }
-        }).start();
+        }).start();*/
+        DepartureService service = new DepartureService(new DefaultApi(ApiClientProvider.getClient()));
+
+        List<DepartureDTO> departures = service.getDepartures(stopId);
+        String html = StopViewBuilder.buildFloatingPopup(name, departures);
+
+        Platform.runLater(() -> {
+            mapInitializer.executeScript("showFloatingPopup('" +
+                    escapeJs(name) + "', '" +
+                    escapeJs(html) + "')");
+        });
+
+    }
+
+    public void showFloatingPopup(String title, String htmlContent) {
+        String escapedHtml = escapeJs(htmlContent);
+        String escapedTitle = escapeJs(title);
+
+        mapInitializer.executeScript("showFloatingPopup('" + escapedTitle + "', '" + escapedHtml + "')");
+    }
+
+
+    private String escapeJs(String input) {
+        return input
+                .replace("\\", "\\\\")
+                .replace("'", "\\'")
+                .replace("\"", "\\\"")
+                .replace("\n", "")
+                .replace("\r", "");
     }
 
     private void updatePopup(String stopName, String stopId, List<DepartureDTO> departures, boolean isFavorite) {
@@ -159,6 +190,20 @@ public class PopupManager {
         }).start();
     }
 
+    public void showFloatingPopupForStop(String stopId, String name, double lat, double lon) {
+        DepartureService service = new DepartureService(new DefaultApi(ApiClientProvider.getClient()));
+        List<DepartureDTO> departures = service.getDepartures(stopId);
+
+        String html = StopViewBuilder.buildFloatingPopup(name, departures);
+
+        Platform.runLater(() -> {
+            mapInitializer.executeScript("showFloatingPopup('" +
+                    escapeJs(name) + "', '" +
+                    escapeJs(html) + "')");
+        });
+    }
+
+
 
     private double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; // Earth radius in km
@@ -178,5 +223,17 @@ public class PopupManager {
             window.call("clearRouteLine");
         });
     }
+
+    public WebEngine getWebEngine() {
+        return mapInitializer.getWebEngine();
+    }
+
+    public void clearFloatingPopup() {
+        mapInitializer.executeScript("""
+        const oldPopup = document.getElementById("floating-popup");
+        if (oldPopup) oldPopup.remove();
+    """);
+    }
+
 
 }

@@ -18,9 +18,26 @@ import com.google.gson.reflect.TypeToken;
 import futar.futar.model.FavoriteRoute;
 import futar.futar.model.FavoriteStop;
 public class FavoriteManager {
+    private static FavoriteManager instance;
+
     private static final Path PATH = Paths.get("favorites.json");
     private List<FavoriteStop> favoriteStops = new ArrayList<>();
     private List<FavoriteRoute> favoriteRoutes = new ArrayList<>();
+
+    private FavoriteManager() {
+        load(); // automatikus betöltés
+    }
+
+    public static FavoriteManager getInstance() {
+        if (instance == null) {
+            synchronized (FavoriteManager.class) {
+                if (instance == null) {
+                    instance = new FavoriteManager();
+                }
+            }
+        }
+        return instance;
+    }
 
     public void load() {
         if (Files.exists(PATH)) {
@@ -47,10 +64,8 @@ public class FavoriteManager {
     }
 
     public Boolean isFavoriteStop(String stopId) {
-        return favoriteStops.stream()
-                .anyMatch(stop -> stop.getStopId().equals(stopId));
+        return favoriteStops.stream().anyMatch(stop -> stop.getStopId().equals(stopId));
     }
-
 
     public List<FavoriteStop> getFavoriteStops() { return favoriteStops; }
     public List<FavoriteRoute> getFavoriteRoutes() { return favoriteRoutes; }
@@ -71,13 +86,7 @@ public class FavoriteManager {
     }
 
     public void removeRoute(String from, String to) {
-        favoriteRoutes.removeIf(route ->
-                route.getFromStop().equals(from) && route.getToStop().equals(to)
-        );
+        favoriteRoutes.removeIf(route -> route.getFromStop().equals(from) && route.getToStop().equals(to));
         save();
     }
-
-
-
-
 }

@@ -8,6 +8,7 @@ public class DepartureViewBuilder {
 
 
     public static String build(List<DepartureDTO> departures, String buttonText) {
+        System.out.println("DEPARTUREBUILDER");
         if (departures.isEmpty()) return "<i>Nincs elérhető indulás</i>";
 
         StringBuilder html = new StringBuilder("<b>Indulások:</b><br><ul>");

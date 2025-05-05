@@ -1389,6 +1389,7 @@ public class Leg {
    * @throws IOException if the JSON Element is invalid with respect to Leg
    */
   public static void validateJsonElement(JsonElement jsonElement) throws IOException {
+    /*
       if (jsonElement == null) {
         if (!Leg.openapiRequiredFields.isEmpty()) { // has required fields but JSON element is null
           throw new IllegalArgumentException(String.format("The required field(s) %s in Leg is not found in the empty JSON string", Leg.openapiRequiredFields.toString()));
@@ -1527,7 +1528,7 @@ public class Leg {
             WalkStep.validateJsonElement(jsonArraysteps.get(i));
           };
         }
-      }
+      }*/
   }
 
   public static class CustomTypeAdapterFactory implements TypeAdapterFactory {

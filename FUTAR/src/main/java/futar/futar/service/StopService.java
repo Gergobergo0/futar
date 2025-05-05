@@ -125,4 +125,21 @@ public class StopService {
                 .filter(stop -> calculateDistance(center.getLat(), center.getLon(), stop.getLat(), stop.getLon()) <= radiusMeters)
                 .collect(Collectors.toList());
     }
+
+    public String getCoordinatesByStopName(String stopName) {
+        StopDTO stop = getStopByName(stopName);
+
+        if (stop != null) {
+            return stop.getLat() + "," + stop.getLon();
+        }
+        return null;
+    }
+
+    public String getOtpCompatibleCoordinates(String stopName) {
+        StopDTO stop = getStopsByName(stopName).stream().findFirst().orElse(null);
+        if (stop == null) return null;
+        return stop.getLat() + "," + stop.getLon();
+    }
+
+
 }

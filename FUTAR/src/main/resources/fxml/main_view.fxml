@@ -8,15 +8,18 @@
 <?import javafx.scene.layout.*?>
 <?import javafx.scene.control.*?>
 <?import javafx.scene.web.WebView?>
+<?import javafx.geometry.Insets?>
 
 <?import javafx.collections.FXCollections?>
 <BorderPane fx:controller="futar.futar.controller.MainViewController"
             xmlns:fx="http://javafx.com/fxml">
     <top>
         <VBox>
+
             <ToolBar>
                 <TextField fx:id="searchField" promptText="Megálló keresése..."/>
                 <Button text="Keresés" onAction="#onSearch"/>
+
                 <Button text="Útvonaltervezés" onAction="#onToggleRoutePlanner"/>
                 <Button text="⭐ Kedvencek" onAction="#onShowFavorites"/>
 
@@ -27,30 +30,51 @@
                     <TextField fx:id="departureField" promptText="Indulási megálló"/>
                     <Button text="⇄" onAction="#onSwapStops"/>
                     <TextField fx:id="arrivalField" promptText="Érkezési megálló"/>
-                    <DatePicker fx:id="datePicker" />
+                    <DatePicker fx:id="datePicker"/>
                     <HBox spacing="6" alignment="CENTER_LEFT">
                         <Spinner fx:id="hourSpinner" prefWidth="70"/>
                         <Label text=":"/>
                         <Spinner fx:id="minuteSpinner" prefWidth="70"/>
                         <Button text="Most" onAction="#onSetNow"/>
                     </HBox>
-
-
                     <ComboBox fx:id="timeModeBox">
                         <items>
                             <FXCollections fx:factory="observableArrayList">
-                                <String  fx:value="Indulás"/>
+                                <String fx:value="Indulás"/>
                                 <String fx:value="Érkezés"/>
                             </FXCollections>
                         </items>
                     </ComboBox>
+                    <Button text="Speciális" onAction="#onToggleAdvancedSettings"/>
                     <Button text="Tervezés" onAction="#onPlanRoute"/>
                 </ToolBar>
+
+                <!-- Rejtett haladó beállítások -->
+                <HBox fx:id="advancedSettingsBox" spacing="10" alignment="CENTER_LEFT" visible="false" managed="false">
+                    <padding>
+                        <Insets top="10.0" right="10.0" bottom="10.0" left="10.0"/>
+                    </padding>
+                    <Label text="Max sétatávolság (m):"/>
+                    <Spinner fx:id="walkDistanceSpinner" prefWidth="100"/>
+
+                    <Label text="Gyalogos sebesség:"/>
+                    <ComboBox fx:id="walkSpeedBox" prefWidth="150">
+                        <items>
+                            <FXCollections fx:factory="observableArrayList">
+                                <String fx:value="LASSÚ"/>
+                                <String fx:value="ÁTLAGOS"/>
+                                <String fx:value="GYORS"/>
+                                <String fx:value="FUTÁS"/>
+                            </FXCollections>
+                        </items>
+                    </ComboBox>
+                </HBox>
             </VBox>
+
         </VBox>
     </top>
 
     <center>
-        <WebView fx:id="mapView" />
+        <WebView fx:id="mapView"/>
     </center>
 </BorderPane>

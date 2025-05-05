@@ -243,6 +243,7 @@ public class DisplayedLeg {
    * @throws IOException if the JSON Element is invalid with respect to DisplayedLeg
    */
   public static void validateJsonElement(JsonElement jsonElement) throws IOException {
+    /*
       if (jsonElement == null) {
         if (!DisplayedLeg.openapiRequiredFields.isEmpty()) { // has required fields but JSON element is null
           throw new IllegalArgumentException(String.format("The required field(s) %s in DisplayedLeg is not found in the empty JSON string", DisplayedLeg.openapiRequiredFields.toString()));
@@ -259,7 +260,7 @@ public class DisplayedLeg {
         JsonObject jsonObj = jsonElement.getAsJsonObject();
       if ((jsonObj.get("name") != null && !jsonObj.get("name").isJsonNull()) && !jsonObj.get("name").isJsonPrimitive()) {
         throw new IllegalArgumentException(String.format("Expected the field `name` to be a primitive type in the JSON string but got `%s`", jsonObj.get("name").toString()));
-      }
+      }*/
   }
 
   public static class CustomTypeAdapterFactory implements TypeAdapterFactory {

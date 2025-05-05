@@ -302,7 +302,7 @@ public class JSON {
             }
         }
 
-        @Override
+        /*@Override
         public OffsetDateTime read(JsonReader in) throws IOException {
             switch (in.peek()) {
                 case NULL:
@@ -315,7 +315,40 @@ public class JSON {
                     }
                     return OffsetDateTime.parse(date, formatter);
             }
+        }*/
+
+        @Override
+        public OffsetDateTime read(JsonReader in) throws IOException {
+            switch (in.peek()) {
+                case NULL:
+                    in.nextNull();
+                    return null;
+                default:
+                    String date = in.nextString();
+                    try {
+                        // Ha millis timestamp (13 számjegy), alakítsuk OffsetDateTime-mé
+                        if (date.matches("\\d{13}")) {
+                            long millis = Long.parseLong(date);
+                            return OffsetDateTime.ofInstant(
+                                    java.time.Instant.ofEpochMilli(millis),
+                                    java.time.ZoneId.systemDefault()
+                            );
+                        }
+
+                        // Ha "+0000"-val végződik, cseréljük le "Z"-re
+                        if (date.endsWith("+0000")) {
+                            date = date.substring(0, date.length() - 5) + "Z";
+                        }
+
+                        return OffsetDateTime.parse(date, formatter);
+                    } catch (Exception e) {
+                        throw new JsonParseException("Nem sikerült OffsetDateTime-t konvertálni: " + date, e);
+                    }
+            }
         }
+
+
+
     }
 
     /**
