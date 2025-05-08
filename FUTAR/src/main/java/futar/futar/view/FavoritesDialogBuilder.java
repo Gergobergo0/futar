@@ -1,8 +1,13 @@
 package futar.futar.view;
 
+import futar.futar.controller.RoutePlannerController;
+import futar.futar.controller.map.PopupManager;
+import futar.futar.controller.map.StopMarkerDisplayer;
 import futar.futar.model.FavoriteRoute;
 import futar.futar.model.FavoriteStop;
+import futar.futar.model.StopDTO;
 import futar.futar.service.FavoriteManager;
+import futar.futar.service.StopService;
 import javafx.scene.control.*;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
@@ -10,8 +15,19 @@ import javafx.scene.layout.VBox;
 import java.util.List;
 
 public class FavoritesDialogBuilder {
+    private static void showFavoriteStop(FavoriteStop stop, FavoriteManager favoriteManager, PopupManager popupManager, StopMarkerDisplayer stopMarkerDisplayer, Dialog<?> dialog) {
+        StopDTO stopDto = new StopService().getStopByName(stop.getStopName());
+        if (stopDto != null) {
+            popupManager.setSelectedStop(stopDto.getId(), stopDto.getName());
+            stopMarkerDisplayer.clearMap();
+            popupManager.clearFloatingPopup();
+            stopMarkerDisplayer.showMultipleStops(List.of(stopDto), true);
+            popupManager.showDepartures(stopDto.getId(), stopDto.getName(), stopDto.getLat(), stopDto.getLon());
+            dialog.close();
+        }
+    }
 
-    public static Dialog<Void> build(FavoriteManager favoriteManager, Runnable onRefresh) {
+    public static Dialog<Void> build(FavoriteManager favoriteManager, Runnable onRefresh, PopupManager popupManager, StopMarkerDisplayer stopMarkerDisplayer) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("⭐ Kedvencek");
         dialog.setHeaderText("Kedvenc megállók és útvonalak");
@@ -25,7 +41,9 @@ public class FavoritesDialogBuilder {
         List<FavoriteStop> stops = favoriteManager.getFavoriteStops();
         for (FavoriteStop stop : stops) {
             HBox row = new HBox(10);
-            Label name = new Label(stop.getName());
+            Hyperlink name = new Hyperlink(stop.getName());
+            name.setOnAction(e -> showFavoriteStop(stop, favoriteManager, popupManager, stopMarkerDisplayer, dialog));
+
             Button rename = new Button("✏️");
             Button delete = new Button("❌");
 
@@ -92,7 +110,7 @@ public class FavoritesDialogBuilder {
 
     // ÚJ metódus a FavoritesDialogBuilder-ben
 
-    public static void refreshContent(VBox container, FavoriteManager favoriteManager, Runnable onRefresh) {
+    public static void refreshContent(VBox container, FavoriteManager favoriteManager, Runnable onRefresh, PopupManager popupManager, Dialog<?> dialog, RoutePlannerController routePlannerController) {
         container.getChildren().clear();
 
         Label stopLabel = new Label("📍 Megállók:");
@@ -100,7 +118,21 @@ public class FavoritesDialogBuilder {
 
         for (FavoriteStop stop : favoriteManager.getFavoriteStops()) {
             HBox row = new HBox(10);
-            Label name = new Label(stop.getName());
+            Hyperlink name = new Hyperlink(stop.getName());
+            name.setOnAction(e -> {
+                StopDTO stopDto = new StopService().getStopByName(stop.getStopName());
+                if (stopDto != null) {
+                    popupManager.showFloatingPopupForStop(
+                            stopDto.getId(),
+                            stopDto.getName(),
+                            stopDto.getLat(),
+                            stopDto.getLon()
+                    );
+                    dialog.close();
+                }
+            });
+
+
             Button rename = new Button("✏️");
             Button delete = new Button("❌");
 
@@ -111,13 +143,13 @@ public class FavoritesDialogBuilder {
                 renameDialog.showAndWait().ifPresent(newName -> {
                     stop.setName(newName);
                     favoriteManager.save();
-                    refreshContent(container, favoriteManager, onRefresh);
+                    refreshContent(container, favoriteManager, onRefresh, popupManager, dialog, routePlannerController);
                 });
             });
 
             delete.setOnAction(e -> {
                 favoriteManager.removeStop(stop.getStopId());
-                refreshContent(container, favoriteManager, onRefresh);
+                refreshContent(container, favoriteManager, onRefresh, popupManager, dialog, routePlannerController);
             });
 
             row.getChildren().addAll(name, rename, delete);
@@ -129,7 +161,11 @@ public class FavoritesDialogBuilder {
 
         for (FavoriteRoute route : favoriteManager.getFavoriteRoutes()) {
             HBox row = new HBox(10);
-            Label name = new Label(route.getName() + " (" + route.getFromStop() + " → " + route.getToStop() + ")");
+            Hyperlink name = new Hyperlink(route.getName() + " (" + route.getFromStop() + " → " + route.getToStop() + ")");
+            name.setOnAction(e -> {
+                routePlannerController.planFavoriteRoute(route.getFromStop(), route.getToStop());
+                dialog.close(); // bezárjuk az ablakot
+            });
             Button rename = new Button("✏️");
             Button delete = new Button("❌");
 
@@ -140,13 +176,13 @@ public class FavoritesDialogBuilder {
                 renameDialog.showAndWait().ifPresent(newName -> {
                     route.setName(newName);
                     favoriteManager.save();
-                    refreshContent(container, favoriteManager, onRefresh);
+                    refreshContent(container, favoriteManager, onRefresh, popupManager, dialog, routePlannerController);
                 });
             });
 
             delete.setOnAction(e -> {
                 favoriteManager.removeRoute(route.getFromStop(), route.getToStop());
-                refreshContent(container, favoriteManager, onRefresh);
+                refreshContent(container, favoriteManager, onRefresh, popupManager, dialog, routePlannerController);
             });
 
             row.getChildren().addAll(name, rename, delete);

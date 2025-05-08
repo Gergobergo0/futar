@@ -21,7 +21,7 @@
                 <Button text="Keresés" onAction="#onSearch"/>
 
                 <Button text="Útvonaltervezés" onAction="#onToggleRoutePlanner"/>
-                <Button text="⭐ Kedvencek" onAction="#onShowFavorites"/>
+                <Button text="Kedvencek" onAction="#onShowFavorites"/>
 
             </ToolBar>
 

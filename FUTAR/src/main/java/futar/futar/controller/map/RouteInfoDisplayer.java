@@ -10,37 +10,57 @@ import org.openapitools.client.api.DefaultApi;
 
 import java.util.List;
 import java.util.Optional;
-
+/**
+ * Felelős egy adott járat útvonalának (megállóinak) megjelenítéséért a lebegő popupban.
+ * <p>
+ * A {@link PopupManager} segítségével HTML tartalmat épít és jelenít meg.
+ */
 public class RouteInfoDisplayer {
+    /**
+     * A popupok kezeléséért felelős komponens.
+     */
+
     private final PopupManager popupManager;
+    /**
+     * A járatnév lekérdezését végző szolgáltatás.
+     */
+
     private final DepartureService departureService;
+    /**
+     * Létrehozza az útvonalmegjelenítő példányt.
+     *
+     * @param popupManager a popupok kezeléséért felelős osztály
+     */
 
     public RouteInfoDisplayer(PopupManager popupManager) {
         this.popupManager = popupManager;
-        this.departureService = new DepartureService(new DefaultApi());
+        this.departureService = new DepartureService();
     }
+    /**
+     * Lekéri a járat összes megállóját, összeállítja a HTML-t és megjeleníti a popupot.
+     * <p>
+     * A háttérszálban történik az adatok betöltése, és a JavaFX UI szálon a megjelenítés.
+     *
+     * @param tripId a lekérdezendő járat azonosítója
+     */
 
     public void displayRouteInfo(String tripId) {
         new Thread(() -> {
             try {
-                System.out.println("RouteINFOTripID==" + tripId);
                 TripApi tripApi = new TripApi();
                 List<StopDTO> stops = tripApi.getStopsByTrip(tripId);
-
                 if (stops.isEmpty()) return;
 
                 Optional<String> routeNameOpt = departureService.getRouteNameByTripId(tripId);
                 String routeName = routeNameOpt.orElse("Ismeretlen járat");
-                String html = RouteViewBuilder.buildAsTextClick(routeName, stops);
 
-                // 🔐 Escapelés, hogy a JS ne szakadjon meg
-                String escapedRouteName = escapeJs(routeName);
-                String escapedHtml = escapeJs(html);
-                popupManager.clearFloatingPopup();
+                String html = popupManager.getRouteViewBuilder().build(routeName, stops);
+                popupManager.setActiveTripId(tripId);
+                popupManager.startAutoRefresh(); // Indítsd itt is!
 
                 Platform.runLater(() -> {
-                    JSObject window = (JSObject) popupManager.getWebEngine().executeScript("window");
-                    window.call("showFloatingPopup", escapedRouteName, escapedHtml);
+                    popupManager.clearFloatingPopup();
+                    popupManager.showFloatingPopup(routeName, html);
                 });
 
             } catch (Exception e) {
@@ -49,13 +69,5 @@ public class RouteInfoDisplayer {
         }).start();
     }
 
-    private String escapeJs(String input) {
-        return input
-                .replace("\\", "\\\\")
-                .replace("'", "\\'")
-                .replace("\"", "\\\"")
-                .replace("\n", "")
-                .replace("\r", "");
-    }
 
 }

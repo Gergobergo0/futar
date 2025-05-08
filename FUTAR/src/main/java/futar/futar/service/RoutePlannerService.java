@@ -8,14 +8,37 @@ import org.openapitools.client.model.*;
 
 import java.time.*;
 import java.util.List;
+/**
+ * A RoutePlannerService felelős az útvonaltervezési kérelmek elküldéséért az OpenAPI felé,
+ * és a válasz feldolgozásáért egy TransitRoute objektummá.
+ */
 
 public class RoutePlannerService {
 
     private final DefaultApi api;
+    /**
+     * Konstruktor, amely inicializálja az API klienst.
+     */
 
     public RoutePlannerService() {
         this.api = new DefaultApi(ApiClientProvider.getClient());
     }
+    /**
+     * Útvonalat tervez két földrajzi pozíció és név között megadott időpont és közlekedési mód alapján.
+     *
+     * @param fromName  indulási hely neve
+     * @param fromLat   indulási hely szélességi koordinátája
+     * @param fromLon   indulási hely hosszúsági koordinátája
+     * @param toName    célhely neve
+     * @param toLat     célhely szélességi koordinátája
+     * @param toLon     célhely hosszúsági koordinátája
+     * @param time      időpont (HH:mm)
+     * @param date      dátum (yyyy-MM-dd)
+     * @param mode      közlekedési mód (pl. "TRANSIT,WALK")
+     * @param arriveBy  ha true, az érkezési időt veszi figyelembe; ha false, az indulásit
+     * @return egy {@link TransitRoute} objektum az útvonal részleteivel, vagy null ha nem található
+     * @throws Exception hiba esetén kivételt dob
+     */
 
     public TransitRoute planRoute(String fromName, double fromLat, double fromLon,
                                   String toName, double toLat, double toLon,
@@ -33,7 +56,7 @@ public class RoutePlannerService {
             default -> throw new IllegalArgumentException("Ismeretlen mód: " + mode);
         };
 
-        // ✅ Epoch millis számítása
+        // epoch millis
         long dateTimeMillis = LocalDate.parse(date)
                 .atTime(LocalTime.parse(time))
                 .atZone(ZoneId.of("Europe/Budapest"))
@@ -44,20 +67,20 @@ public class RoutePlannerService {
                 Dialect.OTP,
                 fromPlace,
                 toPlace,
-                modes,                // ✅ List<TraverseMode>
-                null,                 // ApiVersion (nem kell megadni)
-                null,                 // appVersion
-                null,                 // includeReferences
-                date,                 // pl. "2025-05-05"
-                time,                 // pl. "19:58"
-                null,                 // shouldBuyTickets
-                true,                 // showIntermediateStops
-                arriveBy,             // boolean
-                null,                 // wheelchair
-                null, null, null,     // triangle factors
-                null,                 // optimize
-                null,                 // walkProfile
-                null                  // numItineraries
+                modes,
+                null,
+                null,
+                null,
+                date,
+                time,
+                null,
+                true,
+                arriveBy,
+                null,
+                null, null, null,
+                null,
+                null,
+                null
         );
 
 
@@ -94,24 +117,12 @@ public class RoutePlannerService {
     }
 
 
-    // ─────────────────────────────────────────────
-    // ÚJ időformázók millis alapú mezőkhöz
-    // ─────────────────────────────────────────────
-
-    private String formatTimeFromMillis(Long millis) {
-        if (millis == null) return null;
-        return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
-    }
-
-    private LocalTime formatTimeToLocalTime(OffsetDateTime dateTime) {
-        if (dateTime == null) return null;
-        return dateTime.toLocalTime();
-    }
-
-    private String formatTimeFromOffsetDateTime(OffsetDateTime dateTime) {
-        if (dateTime == null) return null;
-        return dateTime.toLocalTime().toString();
-    }
+    /**
+     * Általános időformátum-értelmezés különböző típusokra (OffsetDateTime, Long, String millis).
+     *
+     * @param time az idő objektum (OffsetDateTime, Long vagy String millis)
+     * @return a formázott idő szövegként, vagy null ha nem sikerült
+     */
 
     private String formatAnyTime(Object time) {
         try {
@@ -120,7 +131,6 @@ public class RoutePlannerService {
             } else if (time instanceof Long millis) {
                 return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
             } else {
-                // Esetleg stringből próbáljunk longot olvasni
                 String raw = time.toString();
                 if (raw.matches("\\d{13}")) {
                     long millis = Long.parseLong(raw);
@@ -132,6 +142,12 @@ public class RoutePlannerService {
         }
         return null;
     }
+    /**
+     * Átalakítja az időt {@link LocalTime}-ra különböző formátumokból.
+     *
+     * @param time az idő objektum (OffsetDateTime, Long vagy String millis)
+     * @return a {@link LocalTime} objektum, vagy null ha nem sikerült
+     */
 
     private LocalTime parseToLocalTime(Object time) {
         try {

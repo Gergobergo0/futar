@@ -10,6 +10,11 @@ public class PathStep {
     private String mode;
     private String stopId;
 
+    public PathStep()
+    {
+
+    }
+
     public PathStep(String label, String from, String to, String departure, String arrival, String tripId, String mode, String stopId) {
         this.label = label;
         this.from = from;
@@ -76,5 +81,9 @@ public class PathStep {
 
     public String getTripId() {
         return tripId;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
     }
 }

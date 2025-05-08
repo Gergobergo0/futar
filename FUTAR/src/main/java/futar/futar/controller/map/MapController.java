@@ -9,7 +9,12 @@ import javafx.scene.control.TextInputDialog;
 
 import java.util.Optional;
 
-
+/**
+ * Térképes felület vezérlője
+ * <p>
+ *     Ez az osztály vezérli a térkép inicializálását, markerezést, popupokat, kedvencek hozzáadását, eltávolítását
+ * </p>
+ */
 public class MapController {
     private final MapInitializer mapInitializer;
     private final FavoriteHandler favoriteHandler;
@@ -18,14 +23,19 @@ public class MapController {
     private final StopMarkerDisplayer stopMarkerDisplayer;
     public static StopInfoDisplayer stopInfoDisplayer;
 
+    /**
+     * létrehoz egy új kontroller példányt és létrehozza a kapcsolódó osztályokat
+     * @param mapView a WebView elem, amely a HTML-alapú térképet tartalmazza
+     */
     public MapController(WebView mapView) {
-        StopService stopService = new StopService();
-        FavoriteManager favoriteManager = FavoriteManager.getInstance(); // ✅
+        FavoriteManager favoriteManager = FavoriteManager.getInstance();
         favoriteManager.load();
         this.mapInitializer = new MapInitializer(mapView);
         this.favoriteHandler = new FavoriteHandler(favoriteManager);
         this.stopMarkerDisplayer = new StopMarkerDisplayer(mapInitializer);
-        this.popupManager = new PopupManager(mapInitializer, favoriteManager, stopMarkerDisplayer);
+        this.popupManager = new PopupManager(mapInitializer, favoriteManager, stopMarkerDisplayer, favoriteHandler);
+        favoriteHandler.setRefreshCallback(() -> popupManager.notifyPopupRefreshNeeded());
+
         this.routeInfoDisplayer = new RouteInfoDisplayer(popupManager);
         stopInfoDisplayer = new StopInfoDisplayer(popupManager);
 
@@ -35,36 +45,54 @@ public class MapController {
 
 
     }
+
+    /**
+     * elindítja a térkép betöltését (ha megszakad az internet)
+     */
     public void finishInit() {
-        mapInitializer.startLoad(); // <-- csak most töltsd be a HTML-t
+        mapInitializer.startLoad(); // később tölti be a html-t (internetkapcsolat ellenőrzés után)
     }
 
+    /**
+     * getter
+     * @return
+     */
     public PopupManager getPopupManager() {
         return popupManager;
     }
 
-
+    /**
+     * beállítja a java összekötő objektumot , ami a js hívásokért és fogadásokért felelős
+     * @param javaConnector
+     */
     public void setJavaConnector(Object javaConnector) {
         mapInitializer.setJavaConnector(javaConnector);
     }
 
 
+    /**
+     * A megadott megálló közvetlen törlése vagy eltávolítása
+     * frissíti a popupot
+     * @param stopId megálló Id
+     * @param stopName  megálló neve
+     */
+    public void toggleFavoriteDirect(String stopId, String stopName) {
+        if (stopId == null || stopName == null) {
+            System.out.println("[HIBA] stopId vagy stopName null");
+            return;
+        }
 
-    public void logFromJavaScript(String message) {
-        System.out.println("JS → JAVA: " + message);
+        popupManager.setSelectedStop(stopId, stopName);
+        favoriteHandler.setSelectedStop(stopId, stopName);
+        favoriteHandler.toggleFavorite();
+
+        popupManager.notifyPopupRefreshNeeded(); // UI újrarajzolás
     }
 
 
-    public void handleStopDetails(String stopId, String name, double lat, double lon) {
-        System.out.println("💬 MapController.handleStopDetails meghívva: " + stopId + ", " + name);
-        popupManager.setSelectedStop(stopId, name);
-        favoriteHandler.setSelectedStop(stopId, name);
-
-        // Itt marker nélkül érkezik, ne használj selectedMarker logikát
-        popupManager.showFloatingPopupForStop(stopId, name, lat, lon);
-    }
-
-
+    /**
+     * A popupból menti a a kedvenc megállót
+     */
     public void addFavoriteStop() {
         String stopId = popupManager.getLastStopId();
         String stopName = popupManager.getLastStopName();
@@ -78,15 +106,40 @@ public class MapController {
             Optional<String> result = dialog.showAndWait();
             result.ifPresent(name -> {
                 favoriteHandler.getFavoriteManager().addStop(new FavoriteStop(name, stopId, stopName));
-                System.out.println("✅ Kedvencként mentve: " + name);
+                System.out.println("Kedvencként mentve: " + name);
             });
         });
     }
 
+
+    /**
+     * Átváltja az aktuális megállót kedvenccé vagy eltávolítja onnan, a popup alapján
+     */
     public void toggleFavorite() {
+        System.out.println("[DEBUG] toggleFavorite() → stopId: " + popupManager.getLastStopId() + ", stopName: " + popupManager.getLastStopName());
+        favoriteHandler.setSelectedStop(
+                popupManager.getLastStopId(),
+                popupManager.getLastStopName()
+        );
+
+        if (popupManager == null) return;
+
+        String stopId = popupManager.getLastStopId();
+        String stopName = popupManager.getLastStopName();
+
+
+        if (stopId == null || stopName == null) {
+            System.out.println("[HIBA] MapController.toggleFavorite(): Nincs stopId vagy stopName");
+            return;
+        }
+
+        favoriteHandler.setSelectedStop(stopId, stopName);
         favoriteHandler.toggleFavorite();
-        popupManager.notifyPopupRefreshNeeded();
+
+        // Frissítjük a popupot is, hogy megjelenjen az új gombszöveg
     }
+
+
 
 
 

@@ -23,8 +23,13 @@ import java.util.stream.Collectors;
 
 import javafx.util.Duration;
 import org.openapitools.client.api.DefaultApi;
+/**
+ * Az útvonaltervező vezérlőosztály, amely kezeli a megállók kiválasztását,
+ * az idő és dátum beállításokat, és az útvonal kiszámítását.
+ */
 
 public class RoutePlannerController {
+    // UI elemek és szolgáltatások
 
     private final Spinner<Integer> hourSpinner;
     private final Spinner<Integer> minuteSpinner;
@@ -47,6 +52,9 @@ public class RoutePlannerController {
     //private final R5RoutePlannerService r5RoutePlannerService = new R5RoutePlannerService();
     private ComboBox<String> walkSpeedBox;
 
+    /**
+     * Konstruktor, beállítja az összes kapcsolódó mezőt és a keresés debounce-t.
+     */
 
     public RoutePlannerController(TextField departureField, TextField arrivalField,
                                   DatePicker datePicker,
@@ -61,7 +69,7 @@ public class RoutePlannerController {
         this.timeField = timeField;
         this.timeModeBox = timeModeBox;
         this.popupManager = popupManager;
-        this.departureService = new DepartureService(new DefaultApi(ApiClientProvider.getClient()));
+        this.departureService = new DepartureService();
         setupDebouncedSearch(departureField, fromDebounce, this::handleDepartureSuggestionsDebounced);
         setupDebouncedSearch(arrivalField, toDebounce, this::handleArrivalSuggestionsDebounced);
 
@@ -69,6 +77,11 @@ public class RoutePlannerController {
         setupFocusListeners();
 
     }
+
+    /**
+     * Beállítja a gyaloglási távolság és sebesség mezőket.
+     */
+
     public void setWalkControls(Spinner<Integer> walkSpinner, ComboBox<String> speedBox) {
         this.walkDistanceSpinner = walkSpinner;
         this.walkSpeedBox = speedBox;
@@ -77,15 +90,24 @@ public class RoutePlannerController {
         walkSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(100, 5000, 1500, 100));
         speedBox.setValue("ÁTLAGOS");
     }
+    /**
+     * Javaslatok feldolgozása a kiinduló megállóhoz.
+     */
 
     private void handleDepartureSuggestionsDebounced(String query) {
         triggerSuggestionWithQuery(departureField, departureSuggestionMenu, query);
     }
+    /**
+     * Javaslatok feldolgozása a cél megállóhoz.
+     */
 
     private void handleArrivalSuggestionsDebounced(String query) {
         triggerSuggestionWithQuery(arrivalField, arrivalSuggestionMenu, query);
     }
 
+    /**
+     * Beállítja az alapértelmezett dátumot és időt a jelenlegi időpontra.
+     */
 
     public void setDefaultDateTime() {
         datePicker.setValue(LocalDate.now());
@@ -98,6 +120,9 @@ public class RoutePlannerController {
         minuteSpinner.getValueFactory().setValue(now.getMinute());
         timeModeBox.setValue("Indulás");
     }
+    /**
+     * Felcseréli a kiinduló és cél megállót.
+     */
 
     public void swapStops() {
         String from = departureField.getText();
@@ -105,6 +130,9 @@ public class RoutePlannerController {
         departureField.setText(to);
         arrivalField.setText(from);
     }
+    /**
+     * Megtervezi az útvonalat a megadott beállítások alapján.
+     */
 
     public void planRoute() {
         String departure = departureField.getText().trim();
@@ -179,14 +207,21 @@ public class RoutePlannerController {
 
     }
 
+    /**
+     * Egy kedvenc útvonal megadása alapján automatikusan kitölti a mezőket és elindítja a tervezést.
+     */
+
+    public void planFavoriteRoute(String from, String to) {
+        departureField.setText(from);
+        arrivalField.setText(to);
+        setDefaultDateTime();  // beállítjuk a dátumot és időt most-ra
+        planRoute(); // ez meghívja a meglévő tervező logikát
+    }
 
 
-
-
-
-
-
-
+    /**
+     * Javaslatok megjelenítése egy adott mezőhöz.
+     */
 
     private void triggerSuggestionWithQuery(TextField field, ContextMenu menu, String text) {
         if (text.length() < 2) {
@@ -220,30 +255,10 @@ public class RoutePlannerController {
 
 
 
-    private void setupTimeFieldContextMenu() {
-        ContextMenu timeMenu = new ContextMenu();
 
-        MenuItem incrementHour = new MenuItem("Óra +1");
-        MenuItem decrementHour = new MenuItem("Óra -1");
-        MenuItem incrementMinute = new MenuItem("Perc +1");
-        MenuItem decrementMinute = new MenuItem("Perc -1");
-        MenuItem setNow = new MenuItem("Most");
-
-        incrementHour.setOnAction(e -> adjustTime(1, 0));
-        decrementHour.setOnAction(e -> adjustTime(-1, 0));
-        incrementMinute.setOnAction(e -> adjustTime(0, 1));
-        decrementMinute.setOnAction(e -> adjustTime(0, -1));
-        setNow.setOnAction(e -> timeField.setText(LocalTime.now().format(DateTimeFormatter.ofPattern("HH:mm"))));
-
-        timeMenu.getItems().addAll(
-                incrementHour, decrementHour,
-                incrementMinute, decrementMinute,
-                new SeparatorMenuItem(),
-                setNow
-        );
-
-        timeField.setContextMenu(timeMenu);
-    }
+    /**
+     * Idő beállításának finomhangolása adott eltéréssel.
+     */
 
     private void adjustTime(int hourDelta, int minuteDelta) {
         try {
@@ -270,12 +285,18 @@ public class RoutePlannerController {
     public void onDecreaseMinute() {
         adjustTime(0, -1);
     }
+    /**
+     * A jelenlegi idő beállítása a Spinner mezőkbe.
+     */
 
     public void onSetNow() {
         LocalTime now = LocalTime.now();
         hourSpinner.getValueFactory().setValue(now.getHour());
         minuteSpinner.getValueFactory().setValue(now.getMinute());
     }
+    /**
+     * Automatikus előnézet frissítése, ha fókusz elvész.
+     */
 
     private void setupFocusListeners() {
         departureField.focusedProperty().addListener((obs, oldVal, newVal) -> {
@@ -292,6 +313,9 @@ public class RoutePlannerController {
 
     private final PauseTransition fromDebounce = new PauseTransition(Duration.millis(500));
     private final PauseTransition toDebounce = new PauseTransition(Duration.millis(500));
+    /**
+     * Debounce alapú keresőmező beállítás.
+     */
 
     public void setupDebouncedSearch(TextField field, PauseTransition debounce, Consumer<String> onSearch) {
         field.textProperty().addListener((obs, oldText, newText) -> {

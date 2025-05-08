@@ -11,10 +11,10 @@ public class JavaConnector {
     }
 
     // Hívás JS-ből, ha egy megállóra kattintanak
-    public void javaGetStopDetails(String stopId, String stopName, double lat, double lon) {
-        System.out.println("🧪 javaGetStopDetails hívás: " + stopId + " / " + stopName);
+    public void javaGetStopDetails(String stopId, String stopName) {
+        System.out.println("[DEBUG] JavaConnector.javaGetStopDetails(" + stopId + ", " +stopName+")");;
         Platform.runLater(() -> {
-            MapController.stopInfoDisplayer.displayStopInfo(stopId, stopName, lat, lon);
+            MapController.stopInfoDisplayer.displayStopInfo(stopId, stopName);
         });
     }
 
@@ -38,4 +38,10 @@ public class JavaConnector {
     public void onPopupClosed() {
         Platform.runLater(() -> mapController.getPopupManager().stopAutoRefresh());
     }
+
+    public void toggleFavoriteFromPopup(String stopId, String stopName) {
+        System.out.println("[Bridge] toggleFavoriteFromPopup: " + stopId + " / " + stopName);
+        Platform.runLater(() -> mapController.toggleFavoriteDirect(stopId, stopName));
+    }
+
 }

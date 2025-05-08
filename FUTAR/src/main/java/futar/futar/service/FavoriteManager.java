@@ -17,17 +17,29 @@ import com.google.gson.JsonParser;
 import com.google.gson.reflect.TypeToken;
 import futar.futar.model.FavoriteRoute;
 import futar.futar.model.FavoriteStop;
+
+/**
+ * A FavoriteManager osztály kezeli a kedvenc megállók és útvonalak tárolását és elérését.
+ * Singleton minta alapján működik, és JSON fájlba menti az adatokat.
+ */
 public class FavoriteManager {
     private static FavoriteManager instance;
 
     private static final Path PATH = Paths.get("favorites.json");
     private List<FavoriteStop> favoriteStops = new ArrayList<>();
     private List<FavoriteRoute> favoriteRoutes = new ArrayList<>();
-
+    /**
+     * Privát konstruktor, amely automatikusan betölti a mentett adatokat.
+     */
     private FavoriteManager() {
         load(); // automatikus betöltés
     }
 
+    /**
+     * Singleton példány lekérdezése.
+     *
+     * @return a FavoriteManager egyetlen példánya
+     */
     public static FavoriteManager getInstance() {
         if (instance == null) {
             synchronized (FavoriteManager.class) {
@@ -38,7 +50,9 @@ public class FavoriteManager {
         }
         return instance;
     }
-
+    /**
+     * Betölti a kedvenc megállókat és útvonalakat a JSON fájlból, ha az létezik.
+     */
     public void load() {
         if (Files.exists(PATH)) {
             try (Reader reader = Files.newBufferedReader(PATH)) {
@@ -50,7 +64,9 @@ public class FavoriteManager {
             }
         }
     }
-
+    /**
+     * Elmenti a kedvenc megállókat és útvonalakat a JSON fájlba.
+     */
     public void save() {
         JsonObject root = new JsonObject();
         root.add("stops", new Gson().toJsonTree(favoriteStops));
@@ -62,28 +78,66 @@ public class FavoriteManager {
             e.printStackTrace();
         }
     }
+    /**
+     * Megvizsgálja, hogy a megadott megálló szerepel-e a kedvencek között.
+     *
+     * @param stopId a megálló azonosítója
+     * @return true, ha kedvenc, különben false
+     */
 
     public Boolean isFavoriteStop(String stopId) {
         return favoriteStops.stream().anyMatch(stop -> stop.getStopId().equals(stopId));
     }
+    /**
+     * Lekéri az összes kedvenc megállót.
+     *
+     * @return a kedvenc megállók listája
+     */
 
     public List<FavoriteStop> getFavoriteStops() { return favoriteStops; }
+    /**
+     * Lekéri az összes kedvenc útvonalat.
+     *
+     * @return a kedvenc útvonalak listája
+     */
+
     public List<FavoriteRoute> getFavoriteRoutes() { return favoriteRoutes; }
+    /**
+     * Hozzáad egy új megállót a kedvencekhez, majd elmenti az adatokat.
+     *
+     * @param stop a hozzáadandó megálló
+     */
 
     public void addStop(FavoriteStop stop) {
         favoriteStops.add(stop);
         save();
     }
+    /**
+     * Hozzáad egy új útvonalat a kedvencekhez, majd elmenti az adatokat.
+     *
+     * @param route a hozzáadandó útvonal
+     */
 
     public void addRoute(FavoriteRoute route) {
         favoriteRoutes.add(route);
         save();
     }
+    /**
+     * Eltávolít egy megállót a kedvencek közül azonosító alapján, majd elmenti az adatokat.
+     *
+     * @param stopId a törlendő megálló azonosítója
+     */
 
     public void removeStop(String stopId) {
         favoriteStops.removeIf(stop -> stop.getStopId().equals(stopId));
         save();
     }
+    /**
+     * Eltávolít egy útvonalat a kedvencek közül a kiinduló és célmegálló alapján.
+     *
+     * @param from a kiinduló megálló neve
+     * @param to   a célmegálló neve
+     */
 
     public void removeRoute(String from, String to) {
         favoriteRoutes.removeIf(route -> route.getFromStop().equals(from) && route.getToStop().equals(to));

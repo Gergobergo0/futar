@@ -665,6 +665,7 @@ public class WalkStep {
    * @throws IOException if the JSON Element is invalid with respect to WalkStep
    */
   public static void validateJsonElement(JsonElement jsonElement) throws IOException {
+    /*
       if (jsonElement == null) {
         if (!WalkStep.openapiRequiredFields.isEmpty()) { // has required fields but JSON element is null
           throw new IllegalArgumentException(String.format("The required field(s) %s in WalkStep is not found in the empty JSON string", WalkStep.openapiRequiredFields.toString()));
@@ -710,7 +711,7 @@ public class WalkStep {
       // validate the optional field `geometry`
       if (jsonObj.get("geometry") != null && !jsonObj.get("geometry").isJsonNull()) {
         EncodedPolylineBean.validateJsonElement(jsonObj.get("geometry"));
-      }
+      }*/
   }
 
   public static class CustomTypeAdapterFactory implements TypeAdapterFactory {

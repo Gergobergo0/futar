@@ -88,6 +88,7 @@
 <body>
 <div id="map"></div>
 <script>
+    //ikonok
     var defaultIcon = L.icon({
         iconUrl: 'https://img.icons8.com/?size=100&id=13800&format=png&color=000000',
         iconSize: [35, 41],
@@ -104,8 +105,10 @@
         shadowSize: [41, 41]
     });
 
+    // MARK: térkép inicalizálása
     var map = L.map('map').setView([47.4979, 19.0402], 13);
 
+    //esti és nappali témák
     var light = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; <a href="https://carto.com/">CartoDB</a>',
         subdomains: 'abcd',
@@ -118,8 +121,12 @@
         maxZoom: 19
     });
 
+    //alapváltozók
     var allStops = [];
     var selectedMarker = null;
+    var routeLine = null;
+    var routeMarkers = [];
+
 
     function logToJava(message) {
         if (window.java && window.java.javaLog) {
@@ -128,22 +135,24 @@
             console.warn("Java objektum nem elérhető még");
         }
     }
+
+    //Kedvencek kezelése
     function toggleFavorite() {
         if (window.java && typeof window.java.toggleFavorite === 'function') {
-            logToJava("📌 Java toggleFavorite() meghívása");
+            logToJava("java.toggleFavorite() meghívása");
             window.java.toggleFavorite();
         } else {
-            logToJava("❌ java.toggleFavorite nem elérhető");
+            logToJava("java.toggleFavorite nem elérhető");
         }
     }
 
-
+    //Markerek lehelyezése
     function addStopTracked(lat, lng, name, stopId) {
         var marker = L.marker([lat, lng], { icon: defaultIcon });
         marker.bindPopup(name);
 
         marker.on('click', function () {
-            console.log("Marker clicked: " + stopId + " (" + name + ")");
+            logToJava("Markerre kattintás:" + stopId + ": " + name);
 
             if (selectedMarker && selectedMarker !== marker) {
                 selectedMarker.setIcon(defaultIcon);
@@ -153,7 +162,7 @@
             marker.setIcon(highlightedIcon);
 
             if (window.java && window.java.javaGetStopDetails) {
-                window.java.javaGetStopDetails(stopId, name, lat, lng);
+                window.java.javaGetStopDetails(stopId, name);
             }
         });
 
@@ -161,25 +170,24 @@
         allStops.push(marker);
     }
 
-
+    /*
     function updatePopupContent(stopName, htmlContent) {
-        logToJava("updatePopupContent()")
+        logToJava("updatePopupContent()");
         if (selectedMarker) {
             selectedMarker.setPopupContent("<b>" + stopName + "</b><br>" + htmlContent);
             selectedMarker.openPopup();
         } else {
-            // ➕ Marker nélküli nézethez: popup megjelenítés a térkép közepén
             var center = map.getCenter();
             var tempPopup = L.popup()
                 .setLatLng(center)
                 .setContent("<b>" + stopName + "</b><br>" + htmlContent)
                 .openOn(map);
         }
-    }
+    }*/
 
+    //popupok megjelenítése
     window.showFloatingPopup = function (title, htmlContent) {
-        // Előző popup törlése (ha van)
-        logToJava("🧾 showFloatingPopup(title=" + title + ")");
+        logToJava("showFloatingPopup(title=" + title + ")");
 
         let existingPopup = document.getElementById("floating-popup");
         if (existingPopup) {
@@ -201,6 +209,9 @@
         closeBtn.onclick = () => {
             popupDiv.remove();
             document.removeEventListener("click", closeOnOutsideClick);
+            if (window.java && typeof window.java.stopPopupRefresh === 'function') {
+                window.java.stopPopupRefresh();
+            }
         };
 
         headerDiv.appendChild(closeBtn);
@@ -213,79 +224,28 @@
         popupDiv.appendChild(contentDiv);
 
         document.body.appendChild(popupDiv);
-        makePopupDraggable(popupDiv); // 👈 Új
+        makePopupDraggable(popupDiv);
 
-
-        // ⛔️ Bezárás, ha nem a popupra kattintunk
         setTimeout(() => {
             document.addEventListener("click", closeOnOutsideClick);
         }, 0);
 
         function closeOnOutsideClick(event) {
-            logToJava("closeOnOutsideClick()")
+            logToJava("closeOnOutsideClick()");
             if (!popupDiv.contains(event.target)) {
                 popupDiv.remove();
                 document.removeEventListener("click", closeOnOutsideClick);
+                if (window.java && typeof window.java.stopPopupRefresh === 'function') {
+                    window.java.stopPopupRefresh();
+                }
             }
         }
-
-
     };
 
-
-
-
-
-    window.onRouteClick = function(tripId) {
-        if (window.java && window.java.handleRouteClick) {
-            window.java.handleRouteClick(tripId);
-        } else {
-            logToJava("handleRouteClick nem elérhető");
-        }
-    }
-    function clearRouteLine() {
-
-        if (routeLine) {
-            map.removeLayer(routeLine);
-            routeLine = null;
-        }
-        routeMarkers.forEach(marker => map.removeLayer(marker));
-        routeMarkers = [];
-    }
-
-
-
-    function clearStops() {
-        for (var i = 0; i < allStops.length; i++) {
-            map.removeLayer(allStops[i]);
-        }
-        allStops = [];
-        selectedMarker = null;
-    }
-
-    window.focusOn = function(lat, lng) {
-        map.setView([lat, lng], 17);
-    };
-
-
-    light.addTo(map);
-
-    var baseMaps = {
-        "Világos": light,
-        "Sötét": dark
-    };
-    function closePopup() {
-        if (selectedMarker) {
-            selectedMarker.closePopup();
-        }
-    }
-    L.control.layers(baseMaps).addTo(map);
-    var routeLine = null;
-    var routeMarkers = [];
-
+    //útvonal két pont között
     function showRouteLine(lat1, lng1, lat2, lng2, distanceKmText) {
-        logToJava("showRouteLine()")
-        // Töröljük az előző vonalat és markereket
+        logToJava("showRouteLine()");
+
         if (routeLine) {
             map.removeLayer(routeLine);
             routeLine = null;
@@ -293,15 +253,12 @@
         routeMarkers.forEach(marker => map.removeLayer(marker));
         routeMarkers = [];
 
-        // Marker: honnan
         var marker1 = L.marker([lat1, lng1], { icon: highlightedIcon }).addTo(map);
         var marker2 = L.marker([lat2, lng2], { icon: highlightedIcon }).addTo(map);
         routeMarkers.push(marker1, marker2);
 
-        // Vonal
         routeLine = L.polyline([[lat1, lng1], [lat2, lng2]], { color: 'blue' }).addTo(map);
 
-        // Felirat középre
         var midLat = (lat1 + lat2) / 2;
         var midLng = (lng1 + lng2) / 2;
         var label = L.marker([midLat, midLng], {
@@ -313,17 +270,90 @@
         }).addTo(map);
         routeMarkers.push(label);
 
-        // Fókusz
         var bounds = L.latLngBounds([[lat1, lng1], [lat2, lng2]]);
         map.fitBounds(bounds, { padding: [50, 50] });
     }
 
+    //útvonal popup
+    window.onRouteClick = function(tripId) {
+        logToJava("\ud83d\udd0d JS onRouteClick hívás: " + tripId);
+        if (window.java && window.java.handleRouteClick) {
+            window.java.handleRouteClick(tripId);
+        } else {
+            console.warn("\u26a0\ufe0f java.handleRouteClick nem elérhető");
+        }
+    };
+
+    //megálló popup
+    window.showStopDetailsPopup = function(stopId, stopName, lat, lon) {
+        logToJava("showStopDetailsPopup() → ID: " + stopId + ", Name: " + stopName + ", Lat: " + lat + ", Lon: " + lon);
+        if (window.java && typeof window.java.javaGetStopDetails === 'function') {
+            window.java.javaGetStopDetails(stopId, stopName);
+        } else {
+            logToJava("java.javaGetStopDetails nem elérhető vagy nem függvény");
+            if (window.java) {
+                console.log("Java objektum tulajdonságai:");
+                for (var prop in window.java) {
+                    console.log(" - " + prop + ": " + (typeof window.java[prop]));
+                }
+            }
+        }
+    };
+
+    //megállóra kattintás
+    window.onStopClick = function(stopId, stopName, lat, lon) {
+        logToJava("[JS] onStopClick(): " + stopId);
+        if (window.java && window.java.javaGetStopDetails) {
+            window.java.javaGetStopDetails(stopId, stopName);
+        } else {
+            console.warn("java.javaGetStopDetails nem elérhető");
+        }
+    };
+
+    //markerek törlése
+    function clearStops() {
+        for (var i = 0; i < allStops.length; i++) {
+            map.removeLayer(allStops[i]);
+        }
+        allStops = [];
+        selectedMarker = null;
+    }
+
+    function clearRouteLine() {
+        if (routeLine) {
+            map.removeLayer(routeLine);
+            routeLine = null;
+        }
+        routeMarkers.forEach(marker => map.removeLayer(marker));
+        routeMarkers = [];
+    }
+
+    function closePopup() {
+        if (selectedMarker) {
+            selectedMarker.closePopup();
+        }
+    }
+
+    window.focusOn = function(lat, lng) {
+        map.setView([lat, lng], 17);
+    };
+
+    //térkép téma választó
+    light.addTo(map);
+    var baseMaps = {
+        "Világos": light,
+        "Sötét": dark
+    };
+    L.control.layers(baseMaps).addTo(map);
+
+    //popup bezárása
     map.on('popupclose', function () {
         if (window.java && window.java.onPopupClosed) {
             window.java.onPopupClosed();
         }
     });
 
+    //popup mozgatása
     function makePopupDraggable(popup) {
         const header = popup.querySelector(".popup-header");
         let offsetX = 0, offsetY = 0;
@@ -333,7 +363,7 @@
             isDragging = true;
             offsetX = e.clientX - popup.offsetLeft;
             offsetY = e.clientY - popup.offsetTop;
-            popup.style.transition = "none"; // ne animáljon húzás közben
+            popup.style.transition = "none";
         });
 
         document.addEventListener("mousemove", (e) => {
@@ -346,44 +376,6 @@
             isDragging = false;
         });
     }
-    window.onRouteClick = function(tripId) {
-        logToJava("🔍 JS onRouteClick hívás: " + tripId);
-        if (window.java && window.java.handleRouteClick) {
-            window.java.handleRouteClick(tripId);
-        } else {
-            console.warn("⚠️ java.handleRouteClick nem elérhető");
-        }
-    };
-
-
-    window.showStopDetailsPopup = function(stopId, stopName, lat, lon) {
-        logToJava("🧪 showStopDetailsPopup() → ID: " + stopId + ", Name: " + stopName + ", Lat: " + lat + ", Lon: " + lon);
-        if (window.java && typeof window.java.javaGetStopDetails === 'function') {
-            window.java.javaGetStopDetails(stopId, stopName, lat, lon);
-        } else {
-            console.error("Java híd nem elérhető vagy javaGetStopDetails nem függvény");
-            logToJava("❌ java.javaGetStopDetails nem elérhető vagy nem függvény");
-            // Ellenőrizzük, mi van a java objektumban
-            if (window.java) {
-                console.log("Java objektum tulajdonságai:");
-                for (var prop in window.java) {
-                    console.log(" - " + prop + ": " + (typeof window.java[prop]));
-                }
-            }
-        }
-    };
-    window.onStopClick = function(stopId, stopName, lat, lon) {
-        logToJava("📍 onStopClick → " + stopName);
-        if (window.java && typeof window.java.javaGetStopDetails === 'function') {
-            window.java.javaGetStopDetails(stopId, stopName, lat, lon);
-        } else {
-            console.warn("❌ javaGetStopDetails nem elérhető");
-        }
-    };
-
-
-
-
 </script>
 </body>
 </html>

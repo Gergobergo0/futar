@@ -4,6 +4,7 @@ import futar.futar.controller.map.PopupManager;
 import futar.futar.controller.map.StopMarkerDisplayer;
 import futar.futar.model.StopDTO;
 import futar.futar.service.StopService;
+import futar.futar.utils.NetworkUtils;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Side;
@@ -17,30 +18,38 @@ import java.util.stream.Collectors;
 import futar.futar.controller.map.MapController;
 import futar.futar.controller.map.MapInitializer;
 import java.util.HashMap;
-
+/**
+ * A keresési mező kezeléséért felelős vezérlő, amely javaslatokat jelenít meg,
+ * lekérdezi a megállókat, és megjeleníti azokat a térképen.
+ */
 public class SearchController {
+    /** A keresési javaslatok gyorsítótára (név alapján csoportosítva). */
+
     private final Map<String, List<StopDTO>> suggestionCache = new HashMap<>();
     private TextField searchField;
     private PauseTransition debounce;
     private final StopService stopService = new StopService();
     private final ContextMenu suggestionMenu = new ContextMenu();
-    private MapController mapController;
     private final StopMarkerDisplayer stopMarkerDisplayer;
     private final PopupManager popupManager;
-
+    /**
+     * Konstruktor a kereső vezérlőhöz.
+     *
+     * @param searchField    a keresőmező (TextField)
+     * @param debounce       késleltetett keresés (debounce) objektum
+     * @param mapController  a térkép vezérlő, amelyből elérhetők a marker- és popupkezelők
+     */
     public SearchController(TextField searchField, PauseTransition debounce, MapController mapController) {
         this.searchField = searchField;
         this.debounce = debounce;
-        this.mapController = mapController;
         this.stopMarkerDisplayer = mapController.getStopMarkerDisplayer();
         this.popupManager = mapController.getPopupManager();
     }
 
-    public void showMultipleStopsOnMap(List<StopDTO> stops, boolean openPopup) {
-        stopMarkerDisplayer.clearMap();
-        popupManager.clearRoutePreview();
-        stopMarkerDisplayer.showMultipleStops(stops, openPopup);
-    }
+    /**
+     * Beállítja a keresőmező eseményfigyelőjét, amely a felhasználó gépelése alapján
+     * debouncolva meghívja a javaslatok lekérdezését.
+     */
 
     public void setupSearchField() {
         searchField.textProperty().addListener((obs, oldText, newText) -> {
@@ -55,13 +64,15 @@ public class SearchController {
         });
     }
 
-    public void initialize(TextField searchField, PauseTransition debounce, MapController mapController) {
-        this.searchField = searchField;
-        this.debounce = debounce;
-        this.mapController = mapController;
-    }
 
+    /**
+     * Lekéri a megállók javaslatait a megadott keresőkifejezés alapján,
+     * és megjeleníti őket a javaslatmenüben.
+     *
+     * @param query a keresett kifejezés
+     */
     private void fetchSuggestions(String query) {
+
         if (suggestionCache.containsKey(query)) {
             Platform.runLater(() -> updateSuggestionsMenu(suggestionCache.get(query)));
             return;
@@ -74,6 +85,11 @@ public class SearchController {
         }).start();
     }
 
+    /**
+     * Frissíti a javaslatmenüt a megadott megállók alapján.
+     *
+     * @param stops a keresési eredmények
+     */
 
     private void updateSuggestionsMenu(List<StopDTO> stops) {
         Map<String, List<StopDTO>> grouped = stops.stream()
@@ -103,6 +119,10 @@ public class SearchController {
         }
     }
 
+    /**
+     * Kézi keresés indítása gombnyomásra vagy más eseményre.
+     * Megjeleníti a megállókat a térképen vagy hibát, ha nincs találat.
+     */
 
     public void performSearch() {
         String query = searchField.getText().trim();
