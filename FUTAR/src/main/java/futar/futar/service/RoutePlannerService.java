@@ -5,6 +5,7 @@ import futar.futar.model.PathStep;
 import futar.futar.model.TransitRoute;
 import org.openapitools.client.api.DefaultApi;
 import org.openapitools.client.model.*;
+import futar.futar.api.RoutePlannerApi;
 
 import java.time.*;
 import java.util.List;
@@ -14,14 +15,14 @@ import java.util.List;
  */
 
 public class RoutePlannerService {
+    private final RoutePlannerApi api = new RoutePlannerApi();
 
-    private final DefaultApi api;
     /**
      * Konstruktor, amely inicializálja az API klienst.
      */
 
     public RoutePlannerService() {
-        this.api = new DefaultApi(ApiClientProvider.getClient());
+
     }
     /**
      * Útvonalat tervez két földrajzi pozíció és név között megadott időpont és közlekedési mód alapján.
@@ -63,25 +64,8 @@ public class RoutePlannerService {
                 .toInstant()
                 .toEpochMilli();
 
-        PlanTripResponse response = api.planTrip(
-                Dialect.OTP,
-                fromPlace,
-                toPlace,
-                modes,
-                null,
-                null,
-                null,
-                date,
-                time,
-                null,
-                true,
-                arriveBy,
-                null,
-                null, null, null,
-                null,
-                null,
-                null
-        );
+        PlanTripResponse response = api.planTrip(fromPlace, toPlace, modes, date, time, arriveBy);
+
 
 
 
@@ -100,7 +84,6 @@ public class RoutePlannerService {
 
             String departure = formatAnyTime(leg.getStartTime());
             String arrival = formatAnyTime(leg.getEndTime());
-            String routeId = leg.getRouteId();
             String tripId = leg.getTripId();
             String routeName = leg.getRouteShortName();
             String label = "[" + modeStr + "] " + (routeName != null ? routeName : (tripId != null ? tripId : "N/A"));
@@ -117,56 +100,39 @@ public class RoutePlannerService {
     }
 
 
-    /**
-     * Általános időformátum-értelmezés különböző típusokra (OffsetDateTime, Long, String millis).
-     *
-     * @param time az idő objektum (OffsetDateTime, Long vagy String millis)
-     * @return a formázott idő szövegként, vagy null ha nem sikerült
-     */
+
+    private LocalTime extractLocalTime(Object time) {
+        if (time instanceof OffsetDateTime odt) {
+            return odt.toLocalTime();
+        } else if (time instanceof Long millis) {
+            return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
+        } else if (time instanceof String raw && raw.matches("\\d{13}")) {
+            long millis = Long.parseLong(raw);
+            return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
+        }
+        return null;
+    }
 
     private String formatAnyTime(Object time) {
         try {
-            if (time instanceof OffsetDateTime odt) {
-                return odt.toLocalTime().toString();
-            } else if (time instanceof Long millis) {
-                return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
-            } else {
-                String raw = time.toString();
-                if (raw.matches("\\d{13}")) {
-                    long millis = Long.parseLong(raw);
-                    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime().toString();
-                }
-            }
+            LocalTime lt = extractLocalTime(time);
+            return lt != null ? lt.toString() : null;
         } catch (Exception e) {
             System.err.println("Nem sikerült időt értelmezni: " + time + " → " + e.getMessage());
+            return null;
         }
-        return null;
     }
-    /**
-     * Átalakítja az időt {@link LocalTime}-ra különböző formátumokból.
-     *
-     * @param time az idő objektum (OffsetDateTime, Long vagy String millis)
-     * @return a {@link LocalTime} objektum, vagy null ha nem sikerült
-     */
 
     private LocalTime parseToLocalTime(Object time) {
         try {
-            if (time instanceof OffsetDateTime odt) {
-                return odt.toLocalTime();
-            } else if (time instanceof Long millis) {
-                return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
-            } else {
-                String raw = time.toString();
-                if (raw.matches("\\d{13}")) {
-                    long millis = Long.parseLong(raw);
-                    return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
-                }
-            }
+            return extractLocalTime(time);
         } catch (Exception e) {
             System.err.println("Nem sikerült időt konvertálni LocalTime-ra: " + time + " → " + e.getMessage());
+            return null;
         }
-        return null;
     }
+
+
 
 
 }

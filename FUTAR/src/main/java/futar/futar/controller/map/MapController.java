@@ -19,9 +19,9 @@ public class MapController {
     private final MapInitializer mapInitializer;
     private final FavoriteHandler favoriteHandler;
     public final PopupManager popupManager;
-    public static RouteInfoDisplayer routeInfoDisplayer;
+    public final RouteInfoDisplayer routeInfoDisplayer;
     private final StopMarkerDisplayer stopMarkerDisplayer;
-    public static StopInfoDisplayer stopInfoDisplayer;
+    public final StopInfoDisplayer stopInfoDisplayer;
 
     /**
      * létrehoz egy új kontroller példányt és létrehozza a kapcsolódó osztályokat
@@ -82,7 +82,7 @@ public class MapController {
             return;
         }
 
-        popupManager.setSelectedStop(stopId, stopName);
+        popupManager.updateSelectedStop(stopId, stopName);
         favoriteHandler.setSelectedStop(stopId, stopName);
         favoriteHandler.toggleFavorite();
 

@@ -16,6 +16,7 @@
     </properties>
 
     <dependencies>
+
         <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-web</artifactId>
@@ -25,6 +26,18 @@
             <groupId>futar</groupId>
             <artifactId>openapi-java-client</artifactId>
             <version>1.0.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itext7-core</artifactId>
+            <version>8.0.1</version>
+            <type>pom</type>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-swing</artifactId>
+            <version>21</version>
         </dependency>
 
 

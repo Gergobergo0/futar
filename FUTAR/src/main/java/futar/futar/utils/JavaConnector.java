@@ -1,20 +1,30 @@
 package futar.futar.utils;
 
 import futar.futar.controller.map.MapController;
+import futar.futar.controller.map.RouteInfoDisplayer;
+import futar.futar.controller.map.StopInfoDisplayer;
 import javafx.application.Platform;
 
 public class JavaConnector {
     private final MapController mapController;
+    private final StopInfoDisplayer stopInfoDisplayer;
+    private final RouteInfoDisplayer routeInfoDisplayer;
+
+    public JavaConnector(MapController mapController, StopInfoDisplayer stopInfoDisplayer, RouteInfoDisplayer routeInfoDisplayer) {
+        this.mapController = mapController;
+        this.stopInfoDisplayer = stopInfoDisplayer;
+        this.routeInfoDisplayer = routeInfoDisplayer;
+    }
 
     public JavaConnector(MapController mapController) {
-        this.mapController = mapController;
+        this(mapController, mapController.stopInfoDisplayer, mapController.routeInfoDisplayer);
     }
 
     // Hívás JS-ből, ha egy megállóra kattintanak
     public void javaGetStopDetails(String stopId, String stopName) {
         System.out.println("[DEBUG] JavaConnector.javaGetStopDetails(" + stopId + ", " +stopName+")");;
         Platform.runLater(() -> {
-            MapController.stopInfoDisplayer.displayStopInfo(stopId, stopName);
+            stopInfoDisplayer.displayStopInfo(stopId, stopName);
         });
     }
 

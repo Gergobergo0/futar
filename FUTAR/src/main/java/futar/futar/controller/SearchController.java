@@ -14,6 +14,7 @@ import javafx.scene.control.TextField;
 import futar.futar.utils.UIUtils;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import futar.futar.controller.map.MapController;
 import futar.futar.controller.map.MapInitializer;
@@ -72,18 +73,17 @@ public class SearchController {
      * @param query a keresett kifejezés
      */
     private void fetchSuggestions(String query) {
-
         if (suggestionCache.containsKey(query)) {
             Platform.runLater(() -> updateSuggestionsMenu(suggestionCache.get(query)));
             return;
         }
 
-        new Thread(() -> {
-            List<StopDTO> stops = stopService.getStopsByName(query);
+        queryStops(query, stops -> {
             suggestionCache.put(query, stops);
-            Platform.runLater(() -> updateSuggestionsMenu(stops));
-        }).start();
+            updateSuggestionsMenu(stops);
+        });
     }
+
 
     /**
      * Frissíti a javaslatmenüt a megadott megállók alapján.
@@ -112,11 +112,12 @@ public class SearchController {
             suggestionMenu.getItems().add(item);
         }
 
-        if (!suggestionMenu.isShowing() && !grouped.isEmpty()) {
+        if (!grouped.isEmpty()) {
             suggestionMenu.show(searchField, Side.BOTTOM, 0, 0);
-        } else if (grouped.isEmpty()) {
+        } else {
             suggestionMenu.hide();
         }
+
     }
 
     /**
@@ -128,14 +129,20 @@ public class SearchController {
         String query = searchField.getText().trim();
         if (query.isEmpty()) return;
 
+        queryStops(query, stops -> {
+            stopMarkerDisplayer.clearMap();
+            popupManager.clearRoutePreview();
+            stopMarkerDisplayer.showMultipleStops(stops, false);
+            if (stops.isEmpty()) UIUtils.showAlert("Nem található megálló: " + query);
+        });
+    }
+
+
+    private void queryStops(String query, Consumer<List<StopDTO>> callback) {
         new Thread(() -> {
             List<StopDTO> stops = stopService.getStopsByName(query);
-            Platform.runLater(() -> {
-                stopMarkerDisplayer.clearMap();
-                popupManager.clearRoutePreview();
-                stopMarkerDisplayer.showMultipleStops(stops, false);
-                if (stops.isEmpty()) UIUtils.showAlert("Nem található megálló: " + query);
-            });
+            Platform.runLater(() -> callback.accept(stops));
         }).start();
     }
+
 }

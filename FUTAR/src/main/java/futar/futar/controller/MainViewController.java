@@ -88,7 +88,7 @@ public class MainViewController {
 
     @FXML public void onShowFavorites() {
         Dialog<Void> dialog = new Dialog<>();
-        dialog.setTitle("⭐ Kedvencek");
+        dialog.setTitle("Kedvencek");
         dialog.setHeaderText("Kedvenc megállók és útvonalak");
 
         VBox container = new VBox(10);

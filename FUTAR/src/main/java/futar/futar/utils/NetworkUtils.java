@@ -18,13 +18,13 @@ public class NetworkUtils {
                     .build();
 
             try (Response response = client.newCall(request).execute()) {
-                System.out.println("🔍 API válasz kód: " + response.code());
+                System.out.println("[JAVA - NetWorkUtils.isApiReachable()] API válasz kód: " + response.code());
                 // Bármi, ami nem hálózati hiba (pl. 401 is), azt elfogadjuk válasznak
 
                 return response.code() != 0;
             }
         } catch (Exception e) {
-            System.err.println("[HÁLÓZATI HIBA] Futár API elérhetetlen");
+            System.err.println("[JAVA - NetWorkUtils.isApiReachable()] Futár API elérhetetlen");
             return false;
         }
     }

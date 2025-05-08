@@ -205,18 +205,9 @@ public class StopService {
         }
         return null;
     }
-    /**
-     * OpenTripPlanner-kompatibilis koordináta formátumot ad vissza.
-     *
-     * @param stopName a megálló neve
-     * @return koordináta szöveg "lat,lon" formátumban vagy null
-     */
 
-    public String getOtpCompatibleCoordinates(String stopName) {
-        StopDTO stop = getStopsByName(stopName).stream().findFirst().orElse(null);
-        if (stop == null) return null;
-        return stop.getLat() + "," + stop.getLon();
-    }
+
+
 
 
 }

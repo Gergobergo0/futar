@@ -37,7 +37,7 @@ public class PopupManager {
     private final RouteViewBuilder routeViewBuilder = new RouteViewBuilder(); //Html nézet az útvonal nézethez
     private final FavoriteHandler favoriteHandler; //Kedvenceket kezelő osztály
     private String lastTripId = null; //Utoljára kiválasztott járat azonosítója (járatnézethes)
-
+    private final DepartureService departureService = new DepartureService();
     /**
      * Létrehozza a popup-kezelőt, betölti a kedvenceket, és beállítja a JavaScript bridge-et.
      *
@@ -54,7 +54,7 @@ public class PopupManager {
         this.favoriteHandler = favoriteHandler;
 
         //A js 'window' objektumhoz és hozzájuk a Java oldali kedvenc kezelő
-        JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
+        JSObject window = getJsWindow();
         window.setMember("java", favoriteHandler);
 
 
@@ -66,8 +66,7 @@ public class PopupManager {
      */
     public void setActiveTripId(String tripId)
     {
-        this.lastStopId = null;
-        this.lastStopName = null;
+        updateSelectedStop(null, null);
 
         this.lastTripId = tripId;
     }
@@ -82,17 +81,11 @@ public class PopupManager {
 
     public void showDepartures(String stopId, String name, double lat, double lon) {
         this.lastTripId = null; //előző útvonal nézet törlése
-        this.lastStopId = stopId; //aktuális megálló ID
-        this.lastStopName = name;
-        favoriteHandler.setSelectedStop(stopId, name); //kiválasztott kedvencek frissítése
+        updateSelectedStop(stopId, name);
         //UI szálon beállítjuk a kiválasztott megállót js oldalon is
-        Platform.runLater(() -> {
-            JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
-            window.setMember("selectedStopId", stopId);
-            window.setMember("selectedStopName", name);
-        });
+        updateJsSelectedStop(stopId, name);
         //popup frissítés és automatikus újratöltés elindítása
-        fetchAndUpdatePopup(stopId, name, lat, lon);
+        loadAndShowStopPopup(stopId, name, lat, lon);
         startAutoRefresh();
     }
 
@@ -112,12 +105,12 @@ public class PopupManager {
     public void refreshPopupContent() {
         System.out.println("[JAVA] PopupContent frissítve");
         if (lastStopId != null && lastStopName != null) { //h
-            fetchAndUpdatePopup(lastStopId, lastStopName, 0, 0);
+            loadAndShowStopPopup(lastStopId, lastStopName, 0, 0);
         } else if (lastTripId != null) {
             new Thread(() -> {
                 try {
                     List<StopDTO> stops = stopService.getStopsByTripId(lastTripId);
-                    String routeName = new DepartureService().getRouteNameByTripId(lastTripId).orElse("Ismeretlen");
+                    String routeName = departureService.getRouteNameByTripId(lastTripId).orElse("Ismeretlen");
                     String html = routeViewBuilder.build(routeName, stops);
 
                     Platform.runLater(() -> {
@@ -130,21 +123,18 @@ public class PopupManager {
         }
     }
 
-    /**
-     * Lekéri az adott megálló indulásait, felépíti a HTML-t, majd megjeleníti popupban.
-     */
+    public void loadAndShowStopPopup(String stopId, String name, double lat, double lon) {
 
-    private void fetchAndUpdatePopup(String stopId, String name, double lat, double lon) {
+        updateSelectedStop(stopId, name);
+
         new Thread(() -> {
             try {
-                DepartureService service = new DepartureService();
-                List<DepartureDTO> departures = service.getDepartures(stopId); //indulások
 
-                boolean isFavorite = favoriteManager.isFavoriteStop(stopId); //megálló kedvenc-e?
-                String html = stopViewBuilder.build(stopId, name, departures, isFavorite); //Html generálás
+                List<DepartureDTO> departures = departureService.getDepartures(stopId);
+                boolean isFavorite = favoriteManager.isFavoriteStop(stopId);
+                String html = stopViewBuilder.build(stopId, name, departures, isFavorite);
 
                 Platform.runLater(() -> {
-                    //popup js oldalon
                     mapInitializer.executeScript("showFloatingPopup('" +
                             UIUtils.escapeJs(name) + "', '" +
                             UIUtils.escapeJs(html) + "')");
@@ -153,8 +143,8 @@ public class PopupManager {
                 e.printStackTrace();
             }
         }).start();
-
     }
+
     /**
      * Megjeleníti a lebegő popupot a megadott HTML tartalommal.
      */
@@ -164,7 +154,7 @@ public class PopupManager {
         String escapedHtml = UIUtils.escapeJs(htmlContent); //html escape js-hez
         String escapedTitle = UIUtils.escapeJs(title); //cím escape js-hez
 
-        mapInitializer.executeScript("showFloatingPopup('" + escapedTitle + "', '" + escapedHtml + "')"); //js-ben meghívja a popup megjelenítést
+        mapInitializer.executeScript("showFloatingPopup('" + escapedTitle + "', '" + escapedHtml + "')"); //js-ben meghívja a
     }
 
 
@@ -197,10 +187,7 @@ public class PopupManager {
         return lastStopName;
     }
 
-    public void setSelectedStop(String id, String name) {
-        this.lastStopId = id;
-        this.lastStopName = name;
-    }
+
     /**
      * Elindítja a popup újratöltését a JavaFX UI szálon.
      */
@@ -217,7 +204,7 @@ public class PopupManager {
      */
     public void showPlannedRoute(double fromLat, double fromLng, double toLat, double toLng, double distanceKm) {
         Platform.runLater(() -> {
-            JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
+            JSObject window = getJsWindow();
             window.call("showRouteLine", fromLat, fromLng, toLat, toLng, String.format("%.2f km", distanceKm));
         });
     }
@@ -249,30 +236,7 @@ public class PopupManager {
             }
         }).start();
     }
-    /**
-     * Popup megjelenítése egy konkrét megállóra, előre betöltött adatokkal.
-     */
-    public void showFloatingPopupForStop(String stopId, String name, double lat, double lon) {
-        System.out.println("[JAVA] showFloatingPopupForStop - stopId: " + stopId + ", name: " + name);
 
-        this.lastStopId = stopId;
-        this.lastStopName = name;
-        setSelectedStop(stopId, name); // 💥 EZ HIÁNYZOTT
-        favoriteHandler.setSelectedStop(stopId, name); // 🟢 Megvan
-
-
-        DepartureService service = new DepartureService();
-        List<DepartureDTO> departures = service.getDepartures(stopId);
-        boolean isFavorite = favoriteManager.isFavoriteStop(stopId);
-
-        String html = stopViewBuilder.build(stopId, name, departures, isFavorite);
-
-        Platform.runLater(() -> {
-            mapInitializer.executeScript("showFloatingPopup('" +
-                    UIUtils.escapeJs(name) + "', '" +
-                    UIUtils.escapeJs(html) + "')");
-        });
-    }
 
 
 
@@ -297,7 +261,7 @@ public class PopupManager {
 
     public void clearRoutePreview() {
         Platform.runLater(() -> {
-            JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
+            JSObject window = getJsWindow();
             window.call("clearRouteLine");
         });
     }
@@ -313,6 +277,25 @@ public class PopupManager {
             """);
 
     }
+
+    public void updateSelectedStop(String stopId, String name) {
+        this.lastStopId = stopId;
+        this.lastStopName = name;
+        favoriteHandler.setSelectedStop(stopId, name);
+    }
+
+    private void updateJsSelectedStop(String stopId, String name) {
+        Platform.runLater(() -> {
+            JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
+            window.setMember("selectedStopId", stopId);
+            window.setMember("selectedStopName", name);
+        });
+    }
+
+    private JSObject getJsWindow() {
+        return (JSObject) mapInitializer.getWebEngine().executeScript("window");
+    }
+
 
 
 }
