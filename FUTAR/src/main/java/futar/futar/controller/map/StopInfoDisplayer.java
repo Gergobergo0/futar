@@ -55,7 +55,7 @@ public class StopInfoDisplayer {
                 String html = popupManager.getStopViewBuilder().build(stopId, stopName, departures, isFavorite);
 
                 Platform.runLater(() -> {
-                    popupManager.showFloatingPopup(stopName, html);
+                    popupManager.showFloatingPopup("Megálló nézet", html);
                 });
 
             } catch (Exception e) {

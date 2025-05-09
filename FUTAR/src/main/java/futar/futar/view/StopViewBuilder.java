@@ -1,7 +1,7 @@
 package futar.futar.view;
+import futar.futar.utils.Colors;
 import futar.futar.utils.UIUtils;
 import futar.futar.model.DepartureDTO;
-
 import java.util.List;
 
 public class StopViewBuilder {
@@ -15,7 +15,6 @@ public class StopViewBuilder {
                 + "border-radius: 10px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); "
                 + "z-index: 9999;'>");
 
-        // Cím + kedvenc gomb
         html.append("<div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;'>");
         html.append("<div style='font-weight: bold; font-size: 16px;'>").append(stopName).append("</div>");
         String onclick = "window.java.toggleFavoriteFromPopup('" + UIUtils.escapeJs(stopId) + "', '" + UIUtils.escapeJs(stopName) + "')";
@@ -35,13 +34,23 @@ public class StopViewBuilder {
             String route = dep.getRoute();
             long minutes = dep.getMinutes();
             String displayTime = minutes < 0 ? "" : minutes == 0 ? "MOST" : minutes + " perc múlva";
+            String backgroundColor = Colors.getTitleColor(dep.getType());
+            String textColor = Colors.getTextColor(dep.getType());
+            System.out.println("[STOPVIEWBUILDER] routeType=" + dep.getType() + " routeName=" + dep.getRoute());
+
 
             // Járatszám (kattintható)
             html.append("<div style='text-align: left;'>")
                     .append("<a href='javascript:void(0)' onclick='onRouteClick(\"")
                     .append(UIUtils.escapeJs(dep.getTripId()))
-                    .append("\")' style='font-weight: bold; text-decoration: none; color: #007bff;'>")
-                    .append("[").append(route).append("]</a>")
+                    .append("\")' style='font-weight: bold; text-decoration: none; color: #000; "
+                            + "padding: 2px 6px; border-radius: 4px; background-color: ")
+                    .append(backgroundColor)
+                    .append(";'>")
+                    .append("<span style='color: ").append(textColor).append(";'>")
+                    .append(route)
+                    .append("</span>")
+                    .append("</a>")
                     .append("</div>");
 
             // Célállomás és idő

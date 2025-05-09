@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class ApiTest {
     private static final String BASE_PATH = "https://futar.bkk.hu/api/query/v1/ws";
-    private static final String API_KEY = "38ff1614-fa20-40ee-bc79-5c3f5490603c"; // ideiglenes kulcs
+    private static final String API_KEY = "38ff1614-fa20-40ee-bc79-5c3f5490603c";
 
     public static void main(String[] args) throws ApiException {
         ApiClient client = Configuration.getDefaultApiClient();

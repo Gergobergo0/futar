@@ -4,7 +4,6 @@ import futar.futar.controller.map.PopupManager;
 import futar.futar.controller.map.StopMarkerDisplayer;
 import futar.futar.model.StopDTO;
 import futar.futar.service.StopService;
-import futar.futar.utils.NetworkUtils;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Side;
@@ -17,7 +16,6 @@ import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import futar.futar.controller.map.MapController;
-import futar.futar.controller.map.MapInitializer;
 import java.util.HashMap;
 /**
  * A keresési mező kezeléséért felelős vezérlő, amely javaslatokat jelenít meg,

@@ -51,16 +51,21 @@ public class RouteInfoDisplayer {
                 List<StopDTO> stops = tripApi.getStopsByTrip(tripId);
                 if (stops.isEmpty()) return;
 
+                Optional<String> routeTypeOpt = departureService.getRouteTypeByTripId(tripId);
                 Optional<String> routeNameOpt = departureService.getRouteNameByTripId(tripId);
+                String routeType = routeTypeOpt.orElse("BUS");
                 String routeName = routeNameOpt.orElse("Ismeretlen járat");
+                System.out.println("[RouteInfoDisplayer] " + routeType);
 
-                String html = popupManager.getRouteViewBuilder().build(routeName, stops);
+                //String html = popupManager.getRouteViewBuilder().build(routeName, stops);
+                String html = popupManager.getRouteViewBuilder().build(routeName, routeType, stops);
+
                 popupManager.setActiveTripId(tripId);
                 popupManager.startAutoRefresh(); // Indítsd itt is!
 
                 Platform.runLater(() -> {
                     popupManager.clearFloatingPopup();
-                    popupManager.showFloatingPopup(routeName, html);
+                    popupManager.showFloatingPopup("Járat nézet", html);
                 });
 
             } catch (Exception e) {

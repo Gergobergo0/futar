@@ -42,6 +42,29 @@ public class MainViewController {
 
     @FXML private Spinner<Integer> hourSpinner;
     @FXML private Spinner<Integer> minuteSpinner;
+    @FXML
+    private Spinner<Integer> walkDistanceSpinner;
+    @FXML
+    public void onIncreaseHour() { routePlannerController.onIncreaseHour(); }
+    @FXML public void onDecreaseHour() { routePlannerController.onDecreaseHour(); }
+    @FXML public void onIncreaseMinute() { routePlannerController.onIncreaseMinute(); }
+    @FXML public void onDecreaseMinute() { routePlannerController.onDecreaseMinute(); }
+    @FXML public void onSetNow() { routePlannerController.onSetNow(); }
+    @FXML
+    private ComboBox<String> walkSpeedBox;
+    /**
+     * Megcseréli a kiindulási és célmegálló mezők értékeit.
+     */
+
+    @FXML public void onSwapStops() { routePlannerController.swapStops(); }
+    /**
+     * Elindítja a keresést a keresőmező tartalma alapján.
+     */
+    @FXML public void onSearch() { searchController.performSearch(); }
+    /**
+     * Elindítja az útvonaltervezést a megadott adatokkal.
+     */
+    @FXML public void onPlanRoute() { routePlannerController.planRoute(); }
 
     private final PauseTransition debounce = new PauseTransition(Duration.millis(300));
     private MapController mapController;
@@ -110,24 +133,7 @@ public class MainViewController {
     }
 
 
-    @FXML
-    private Spinner<Integer> walkDistanceSpinner;
 
-    @FXML
-    private ComboBox<String> walkSpeedBox;
-    /**
-     * Megcseréli a kiindulási és célmegálló mezők értékeit.
-     */
-
-    @FXML public void onSwapStops() { routePlannerController.swapStops(); }
-    /**
-     * Elindítja a keresést a keresőmező tartalma alapján.
-     */
-    @FXML public void onSearch() { searchController.performSearch(); }
-    /**
-     * Elindítja az útvonaltervezést a megadott adatokkal.
-     */
-    @FXML public void onPlanRoute() { routePlannerController.planRoute(); }
     /**
      * Megjeleníti vagy elrejti az útvonaltervező panelt.
      */
@@ -152,12 +158,7 @@ public class MainViewController {
 
     // Idő beállító gombok
 
-    @FXML
-    public void onIncreaseHour() { routePlannerController.onIncreaseHour(); }
-    @FXML public void onDecreaseHour() { routePlannerController.onDecreaseHour(); }
-    @FXML public void onIncreaseMinute() { routePlannerController.onIncreaseMinute(); }
-    @FXML public void onDecreaseMinute() { routePlannerController.onDecreaseMinute(); }
-    @FXML public void onSetNow() { routePlannerController.onSetNow(); }
+
 
     /*public void javaLog(String message) { mapController.logFromJavaScript(message);
        // System.out.println("JS:" + message);}*/

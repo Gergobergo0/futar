@@ -57,12 +57,7 @@ public class RoutePlannerService {
             default -> throw new IllegalArgumentException("Ismeretlen mód: " + mode);
         };
 
-        // epoch millis
-        long dateTimeMillis = LocalDate.parse(date)
-                .atTime(LocalTime.parse(time))
-                .atZone(ZoneId.of("Europe/Budapest"))
-                .toInstant()
-                .toEpochMilli();
+
 
         PlanTripResponse response = api.planTrip(fromPlace, toPlace, modes, date, time, arriveBy);
 
@@ -118,7 +113,7 @@ public class RoutePlannerService {
             LocalTime lt = extractLocalTime(time);
             return lt != null ? lt.toString() : null;
         } catch (Exception e) {
-            System.err.println("Nem sikerült időt értelmezni: " + time + " → " + e.getMessage());
+            System.err.println("[JAVA] ROutePlannerService.formatAnyTime(): " + time + " -> " + e.getMessage());
             return null;
         }
     }
@@ -127,7 +122,7 @@ public class RoutePlannerService {
         try {
             return extractLocalTime(time);
         } catch (Exception e) {
-            System.err.println("Nem sikerült időt konvertálni LocalTime-ra: " + time + " → " + e.getMessage());
+            System.err.println("[JAVA] RoutePlannerService.parseToLocalTime(): " + time + " -> " + e.getMessage());
             return null;
         }
     }

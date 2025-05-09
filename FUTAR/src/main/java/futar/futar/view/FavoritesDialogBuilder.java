@@ -40,7 +40,7 @@ public class FavoritesDialogBuilder {
         return dialog;
     }
 
-    // ÚJ metódus a FavoritesDialogBuilder-ben
+    //ÚJ metódus a FavoritesDialogBuilder-ben
 
     public static void refreshContent(VBox container, FavoriteManager favoriteManager, Runnable onRefresh, PopupManager popupManager, Dialog<?> dialog, RoutePlannerController routePlannerController) {
         container.getChildren().clear();
@@ -55,7 +55,7 @@ public class FavoritesDialogBuilder {
         }
 
 
-        Label routeLabel = new Label("🚏 Útvonaltervek:");
+        Label routeLabel = new Label("Útvonaltervek:");
         container.getChildren().add(routeLabel);
 
         for (FavoriteRoute route : favoriteManager.getFavoriteRoutes()) {

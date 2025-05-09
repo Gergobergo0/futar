@@ -14,6 +14,7 @@ import javafx.scene.web.WebEngine;
 import netscape.javascript.JSObject;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -110,11 +111,16 @@ public class PopupManager {
             new Thread(() -> {
                 try {
                     List<StopDTO> stops = stopService.getStopsByTripId(lastTripId);
-                    String routeName = departureService.getRouteNameByTripId(lastTripId).orElse("Ismeretlen");
-                    String html = routeViewBuilder.build(routeName, stops);
 
+                    Optional<String> routeNameOpt = departureService.getRouteNameByTripId(lastTripId);
+                    Optional<String> routeTypeOpt = departureService.getRouteTypeByTripId(lastTripId); // ha van ilyen metódusod
+
+                    String routeName = routeNameOpt.orElse("Ismeretlen járat");
+                    String routeType = routeTypeOpt.orElse("BUS");
+                    System.out.println("POPUPMANAGER: " + routeType);
+                    String html = routeViewBuilder.build(routeName, routeType, stops);
                     Platform.runLater(() -> {
-                        showFloatingPopup(routeName, html);
+                        showFloatingPopup("Járat nézet", html);
                     });
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -135,8 +141,8 @@ public class PopupManager {
                 String html = stopViewBuilder.build(stopId, name, departures, isFavorite);
 
                 Platform.runLater(() -> {
-                    mapInitializer.executeScript("showFloatingPopup('" +
-                            UIUtils.escapeJs(name) + "', '" +
+                    mapInitializer.executeScript("showFloatingPopup('Megálló nézet', '" +
+                            //"Megálló nézet" + "', '" +
                             UIUtils.escapeJs(html) + "')");
                 });
             } catch (Exception e) {

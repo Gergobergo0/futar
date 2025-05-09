@@ -1,17 +1,14 @@
 package futar.futar.view;
-
-import futar.futar.controller.map.MapController;
 import futar.futar.controller.map.PopupManager;
 import futar.futar.controller.map.RouteInfoDisplayer;
 import futar.futar.model.FavoriteRoute;
 import futar.futar.model.PathStep;
 import futar.futar.service.FavoriteManager;
 import futar.futar.service.StopService;
+import futar.futar.utils.Colors;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.print.PrinterJob;
 import javafx.embed.swing.SwingFXUtils;
-
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
@@ -24,18 +21,17 @@ import javafx.stage.FileChooser;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
-
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.layout.Document;
 import com.itextpdf.layout.element.Image;
 import com.itextpdf.io.image.ImageDataFactory;
-
 import java.time.Duration;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 public class RoutePlanBuilder {
 
@@ -119,7 +115,7 @@ public class RoutePlanBuilder {
 
     private static Hyperlink createStopLink(String name, PopupManager popupManager) {
         Hyperlink link = new Hyperlink(name);
-        link.setStyle("-fx-text-fill: #0066cc; -fx-underline: true;");
+        link.setStyle("-fx-text-fill: #212121;");
         link.setOnAction(evt -> {
             var stopDto = new StopService().getStopByName(name);
             if (stopDto != null) {
@@ -141,8 +137,10 @@ public class RoutePlanBuilder {
         return switch (parts[0].toUpperCase()) {
             case "BUS" -> route + " busz";
             case "TRAM" -> route + " villamos";
-            case "SUBWAY" -> route.replace("M", "") + " metró";
+            //case "SUBWAY" -> route.replace("M", "") + " metró";
             case "RAIL" -> route + " vonat";
+            case "COACH" -> route + " busz";
+            case "TROLLEYBUS" -> route + " trolibusz";
             default -> route;
         };
     }
@@ -160,7 +158,6 @@ public class RoutePlanBuilder {
             }
             String from = step.getFrom();
             LocalTime departure = LocalTime.parse(step.getDeparture(), formatter);
-            int walkStart = i;
             while (i < steps.size() && steps.get(i).getMode().equalsIgnoreCase("WALK")) i++;
             int walkEnd = i - 1;
             String to = steps.get(walkEnd).getTo();
@@ -180,14 +177,8 @@ public class RoutePlanBuilder {
         VBox card = new VBox(5);
         card.setPadding(new Insets(10));
         card.setSpacing(3);
-        String backgroundColor = switch (step.getMode().toUpperCase()) {
-            case "BUS" -> "#e3f2fd";
-            case "TRAM" -> "#fff3e0";
-            case "SUBWAY" -> "#ede7f6";
-            case "WALK" -> "#e0f2f1";
-            case "RAIL" -> "#ccbac7";
-            default -> "#eeeeee";
-        };
+        String backgroundColor = Colors.getBackGroundColor(step.getMode());
+
 
         card.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #cccccc; -fx-background-color: " + backgroundColor + ";");
         Node headerContent = createStepHeader(step, routeInfoDisplayer);
@@ -284,22 +275,56 @@ public class RoutePlanBuilder {
 
 
     private static Node createStepHeader(PathStep step, RouteInfoDisplayer routeInfoDisplayer) {
-        String icon = switch (step.getMode().toUpperCase()) {
-            case "BUS" -> "🚌 ";
-            case "TRAM" -> "🚋 ";
-            case "SUBWAY" -> "🚇 ";
-            case "WALK" -> "🚶 ";
-            default -> "➡️ ";
+        String mode = step.getMode().toUpperCase();
+
+        // Emoji ikon hozzárendelése a módhoz
+        String icon = switch (mode) {
+            case "BUS" -> "\uD83D\uDE8C ";
+            case "TRAM" -> "\uD83D\uDE8A ";
+            case "SUBWAY" -> "\uD83D\uDE87 ";
+            case "WALK" -> "\uD83D\uDEB6 ";
+            case "RAIL" -> "\uD83D\uDE82 ";
+            case "COACH" -> "\uD83D\uDE8D ";
+            case "TROLLEYBUS" -> "\uD83D\uDE8E";
+            default -> "⬛ ";
         };
+
+
+        String backgroundColor;
+        String textColor;
+
+        if (mode.equals("SUBWAY")) {
+            String line = step.getLabel() != null ? step.getLabel().toUpperCase() : "";
+            backgroundColor = switch (line) {
+                case "[SUBWAY] M1" -> Colors.M1_COLOR;
+                case "[SUBWAY] M2" -> Colors.M2_COLOR;
+                case "[SUBWAY] M3" -> Colors.M3_COLOR;
+                case "[SUBWAY] M4" -> Colors.M4_COLOR;
+                default -> Colors.getTitleColor("M3");
+            };
+            textColor = Colors.getTextColor("M3");
+        } else {
+            backgroundColor = Colors.getTitleColor(mode);
+            textColor = Colors.getTextColor(mode);
+        }
 
         String labelText = step.getMode().equalsIgnoreCase("WALK")
                 ? "Séta"
                 : formatModeAndRoute(step.getMode(), step.getLabel());
 
-        return step.getMode().equalsIgnoreCase("WALK")
+        Node headerLabel = step.getMode().equalsIgnoreCase("WALK")
                 ? new Label(icon + labelText)
                 : createTripLink(icon + labelText, step.getTripId(), routeInfoDisplayer);
+
+        headerLabel.setStyle("-fx-background-color: none; -fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: " + textColor);
+
+        HBox headerBox = new HBox(headerLabel);
+        headerBox.setPadding(new Insets(6));
+        headerBox.setStyle("-fx-background-color: " + backgroundColor + "; -fx-background-radius: 8; -fx-border-radius: 8");
+
+        return headerBox;
     }
+
 
     private static ScrollPane createScrollableContent(VBox content) {
         ScrollPane scroll = new ScrollPane(content);

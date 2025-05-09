@@ -7,15 +7,23 @@ public class DepartureDTO {
     private final String formattedTime;
     private final String tripHeadsign;
     private final long minutes;
+    private final String type;
 
-    public DepartureDTO(String route, String headsign, String formattedTime, String tripHeadsign, long minutes, String tripId) {
+    public DepartureDTO(String route, String headsign, String formattedTime, String tripHeadsign, long minutes, String tripId, String type) {
         this.route = route;
         this.headsign = headsign;
         this.formattedTime = formattedTime;
         this.tripHeadsign = tripHeadsign;
         this.minutes = minutes;
         this.tripId = tripId;
+        this.type = type;
+
     }
+
+    public String getType() {
+        return type;
+    }
+
     public String getTripId(){return tripId;}
     public String getTripHeadsign() {return tripHeadsign;}
     public String getRoute() {

@@ -1,5 +1,4 @@
 package futar.futar.controller;
-import futar.futar.api.ApiClientProvider;
 import futar.futar.controller.map.PopupManager;
 import futar.futar.controller.map.RouteInfoDisplayer;
 import futar.futar.service.DepartureService;
@@ -23,7 +22,6 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import javafx.util.Duration;
-import org.openapitools.client.api.DefaultApi;
 /**
  * Az útvonaltervező vezérlőosztály, amely kezeli a megállók kiválasztását,
  * az idő és dátum beállításokat, és az útvonal kiszámítását.
@@ -138,7 +136,7 @@ public class RoutePlannerController {
         StopDTO[] stops = resolveStops(params.departure, params.arrival);
         if (stops == null) return;
 
-        System.out.println("Útvonaltervezés: " + params.departure + " → " + params.arrival +
+        System.out.println("[JAVA] Útvonaltervezés: " + params.departure + " -> " + params.arrival +
                 " @ " + params.date + " " + params.time + " (" + params.mode + ")");
 
         runRoutePlanningInBackground(params, stops[0], stops[1]);
@@ -325,7 +323,8 @@ public class RoutePlannerController {
                 Platform.runLater(() -> displayRouteResult(route));
             } catch (Exception e) {
                 e.printStackTrace();
-                Platform.runLater(() -> UIUtils.showAlert("Hiba történt az útvonaltervezés során:\n" + e.getMessage()));
+                Platform.runLater(() -> UIUtils.showAlert("Hiba történt az útvonaltervezés során."));
+                System.out.println("[HIBA - runRoutePlanningInBackGround]: " + e.getMessage());
             }
         }).start();
     }
@@ -337,9 +336,4 @@ public class RoutePlannerController {
             UIUtils.showAlert("Nincs találat a keresett útvonalra.");
         }
     }
-
-
-
-
-
 }

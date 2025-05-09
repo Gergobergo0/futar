@@ -45,13 +45,19 @@ public class DepartureService {
                 String tripId = stopTime.getTripId();
                 String routeShortName = "?";
                 String tripHeadsign = "?";
+                String routeType = "?";
 
                 if (tripId != null && trips.containsKey(tripId)) {
                     TransitTrip trip = trips.get(tripId);
                     tripHeadsign = trip.getTripHeadsign();
                     String routeId = trip.getRouteId();
                     if (routeId != null && routes.containsKey(routeId)) {
-                        routeShortName = routes.get(routeId).getShortName();
+                        TransitRoute route = routes.get(routeId);
+                        routeShortName = route.getShortName();
+                        if (route.getType() != null)
+                        {
+                            routeType = route.getType().toString();
+                        }
                     }
                 }
 
@@ -62,7 +68,7 @@ public class DepartureService {
                 long now = Instant.now().getEpochSecond();
                 long minutes = Math.max((time - now) / 60, 0);
 
-                return new DepartureDTO(routeShortName, stopTime.getStopHeadsign(), formattedTime, tripHeadsign, minutes, tripId);
+                return new DepartureDTO(routeShortName, stopTime.getStopHeadsign(), formattedTime, tripHeadsign, minutes, tripId, routeType);
             }).collect(Collectors.toList());
 
         } catch (Exception e) {
@@ -95,7 +101,18 @@ public class DepartureService {
         }
     }
 
-
-
-
+    public Optional<String> getRouteTypeByTripId(String tripId) {
+        try {
+            var response = departureApi.getTripDetails(tripId);
+            OTPTransitReferences refs = response.getData().getReferences().getOTPTransitReferences();
+            TransitTrip trip = refs.getTrips().get(tripId);
+            if (trip == null) return Optional.empty();
+            TransitRoute route = refs.getRoutes().get(trip.getRouteId());
+            if (route == null || route.getType() == null) return Optional.empty();
+            return Optional.of(route.getType().toString());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return Optional.empty();
+        }
+    }
 }
