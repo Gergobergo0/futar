@@ -5,12 +5,19 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * teljes útvonal osztálya , ami több PathStep-ból áll
+ */
 public class TransitRoute {
     private List<PathStep> steps = new ArrayList<>();
     private LocalTime arrivalTime;
     private LocalTime startTime; // <-- ezt add hozzá
     private String mode;
-
+    /**
+     * Hozzáad egy útvonal lépést a jelenlegi listához.
+     *
+     * @param step az új {@link PathStep} lépés
+     */
     public void addStep(PathStep step) {
         steps.add(step);
     }

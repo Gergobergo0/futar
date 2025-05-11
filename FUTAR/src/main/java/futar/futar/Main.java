@@ -9,7 +9,7 @@ import javafx.scene.image.Image;
 import java.awt.*;
 import java.io.InputStream;
 import java.net.URL;
-
+//https://repo.itk.ppke.hu/java/gelge1
 public class Main extends Application {
     //private OtpServiceManager otpServiceManager;
     @Override
@@ -17,12 +17,9 @@ public class Main extends Application {
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("/fxml/main_view.fxml"));
         Scene scene = new Scene(loader.load());
         try {
-            // MacOS Dock ikon beállítása java.awt.Image típusú képpel
             URL iconURL = getClass().getResource("/images/FUTAR_ICON.png");
             if (iconURL != null) {
-                // Az image betöltése java.awt.Image típusban
                 java.awt.Image awtImage = Toolkit.getDefaultToolkit().getImage(iconURL);
-                // Beállítjuk a Dock ikont MacOS-en
                 com.apple.eawt.Application.getApplication().setDockIconImage(awtImage);
             }
         } catch (Exception e) {
@@ -30,7 +27,7 @@ public class Main extends Application {
         }
         InputStream iconStream = getClass().getResourceAsStream("/images/FUTAR_ICON.png");
         if (iconStream != null) {
-            primaryStage.getIcons().add(new Image(iconStream)); // JavaFX ikont állítunk be
+            primaryStage.getIcons().add(new Image(iconStream));
         }
 
 

@@ -1,5 +1,8 @@
 package futar.futar.model;
 
+/**
+ * egy útvonal egyetlen lépését reprezentálja közlekedési eszköz/séta is lehet
+ */
 public class PathStep {
     private String label;
     private String from;
@@ -14,6 +17,18 @@ public class PathStep {
     {
 
     }
+    /**
+     * Paraméteres konstruktor egy teljes útvonal lépés adataival.
+     *
+     * @param label járat neve
+     * @param from indulási megálló neve
+     * @param to érkezési megálló neve
+     * @param departure indulási idő HH:mm
+     * @param arrival érkezési idő
+     * @param tripId a járat egyedi azonosítója
+     * @param mode a közlekedési mód WALK, BUS, TRAM
+     * @param stopId a megálló egyedi azonosítója
+     */
 
     public PathStep(String label, String from, String to, String departure, String arrival, String tripId, String mode, String stopId) {
         this.label = label;
@@ -27,7 +42,6 @@ public class PathStep {
 
     public String getStopId(){return stopId;}
 
-    // Getterek és setterek (ha kell)
 
     public String getMode(){return mode;}
     public String getLabel() {
