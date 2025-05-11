@@ -6,7 +6,17 @@ import futar.futar.utils.UIUtils;
 
 import java.util.List;
 
+/**
+ * html alapú tartalmat generál egy járat útvonalának megjelenítéséhez
+ */
 public class RouteViewBuilder {
+    /**
+     * generálja a járat állomásainak HTML nézetét,
+     * @param routeName járat neve pl M4
+     * @param routeType járat típusa pl BUS
+     * @param stops járat megállói
+     * @return
+     */
     public String build(String routeName, String routeType, List<StopDTO> stops) {
         StringBuilder html = new StringBuilder();
         String backgroundColor = Colors.getTitleColor(routeType);

@@ -1,4 +1,5 @@
 package futar.futar.view;
+
 import futar.futar.controller.map.PopupManager;
 import futar.futar.controller.map.RouteInfoDisplayer;
 import futar.futar.model.FavoriteRoute;
@@ -33,9 +34,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * ez az osztály felelős a megtervezett útvonal ablak megjelenítéséért
+ * A megjelenített útvonal lépésekre bontva (PathStep) objektumok
+ */
 public class RoutePlanBuilder {
-
-
+    /**
+     * Megjeleníti az útvonal ablakot,
+     * @param steps teljes útvonal lépéslistája
+     * @param popupManager a megallokhoz tartozo popupok megjeleniteseert felelos komponens
+     * @param routeInfoDisplayer az adott jaratok utvonal-informaciojanak megjeleniteseert felelos komponens
+     */
     public static void show(List<PathStep> steps, PopupManager popupManager, RouteInfoDisplayer routeInfoDisplayer) {
         if (steps == null || steps.isEmpty()) return;
         steps = mergeSteps(steps);
@@ -48,14 +57,9 @@ public class RoutePlanBuilder {
         routeLayout.setPadding(new Insets(15));
 
         for (int i = 0; i < steps.size(); i++) {
-
-            VBox card = createStepCard(steps.get(i), i, popupManager, routeInfoDisplayer);//new VBox(5);
+            VBox card = createStepCard(steps.get(i), i, popupManager, routeInfoDisplayer);
             routeLayout.getChildren().add(card);
-
-
-
             if (i < steps.size() - 1) {
-
                 routeLayout.getChildren().add(createSectionSeparator());
             }
         }
@@ -82,7 +86,6 @@ public class RoutePlanBuilder {
         Button pdfButton = new Button("Mentés PDF-be");
         pdfButton.setOnAction(e -> exportRouteAsPdf(routeLayout, popupStage));
 
-
         Button closeButton = new Button("Bezárás");
         closeButton.setOnAction(e -> popupStage.close());
 
@@ -91,13 +94,17 @@ public class RoutePlanBuilder {
         VBox root = new VBox(10, scrollPane, buttons);
         root.setPadding(new Insets(10));
 
-
-
-
         popupStage.setScene(new Scene(root, 700, 520));
         popupStage.show();
     }
 
+    /**
+     * Létrehoz egy linket, amely a járat részletes információját jeleníti meg.
+     * @param text a megjelenítendő szöveg
+     * @param tripId a járat azonosítója
+     * @param routeInfoDisplayer az információ megjelenítéséért felelős osztály
+     * @return egy {@link Region}, amely vagy szimpla Label vagy kattintható Hyperlink (pl ha séta akk nem kattintható)
+     */
     private static Region createTripLink(String text, String tripId, RouteInfoDisplayer routeInfoDisplayer) {
         if (tripId == null || tripId.isBlank()) return new Label(text);
         Hyperlink link = new Hyperlink(text);
@@ -112,6 +119,12 @@ public class RoutePlanBuilder {
         });
         return link;
     }
+    /**
+     * Létrehoz egy kattintható hivatkozást, amely egy megállót indulási adatait nyitja meg
+     * @param name a megálló neve
+     * @param popupManager a popup kezelő komponens
+     * @return egy {@link Hyperlink} komponens
+     */
 
     private static Hyperlink createStopLink(String name, PopupManager popupManager) {
         Hyperlink link = new Hyperlink(name);
@@ -124,11 +137,21 @@ public class RoutePlanBuilder {
         });
         return link;
     }
-
+    /**
+     * Egy nyers trip ID-t konvertál BKK formátumúvá, ha szükséges
+     * @param rawTripId a nyers ID
+     * @return az átalakított ID
+     */
     private static String convertTripId(String rawTripId) {
         return (rawTripId != null && rawTripId.startsWith("BKK:")) ? "BKK_" + rawTripId.substring(4) : rawTripId;
     }
 
+    /**
+     * formázza a közlekedési mód és járatszám alapján megjelenítendő szöveget
+     * @param mode a közlekedési mód (BUS, TRAM, stb.)
+     * @param label a címke/járat azonosító
+     * @return járatleírás
+     */
     private static String formatModeAndRoute(String mode, String label) {
         if (label == null) return mode;
         String[] parts = label.replace("[", "").replace("]", "").split(" ");
@@ -137,14 +160,17 @@ public class RoutePlanBuilder {
         return switch (parts[0].toUpperCase()) {
             case "BUS" -> route + " busz";
             case "TRAM" -> route + " villamos";
-            //case "SUBWAY" -> route.replace("M", "") + " metró";
             case "RAIL" -> route + " vonat";
             case "COACH" -> route + " busz";
             case "TROLLEYBUS" -> route + " trolibusz";
             default -> route;
         };
     }
-
+    /**
+     * Összefűzi az egymást követő séta szakaszokat egyetlen lépéssé
+     * @param steps az eredeti lépések listája
+     * @return az összevont lépések listája
+     */
     private static List<PathStep> mergeSteps(List<PathStep> steps) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("HH:mm[:ss]");
         List<PathStep> mergedSteps = new ArrayList<>();
@@ -172,28 +198,27 @@ public class RoutePlanBuilder {
         }
         return mergedSteps;
     }
-
+    /**
+     * Létrehoz egy szakasz kártyát az adott lépéshez
+     * @param step a lépés (PathStep)
+     * @param index a lépés indexe a listában
+     * @param popupManager a megállók popupjainak kezelője
+     * @param routeInfoDisplayer a járatok részleteinek megjelenítője
+     * @return egy VBox elem
+     */
     private static VBox createStepCard(PathStep step, int index, PopupManager popupManager, RouteInfoDisplayer routeInfoDisplayer) {
         VBox card = new VBox(5);
         card.setPadding(new Insets(10));
         card.setSpacing(3);
         String backgroundColor = Colors.getBackGroundColor(step.getMode());
-
-
         card.setStyle("-fx-background-radius: 8; -fx-border-radius: 8; -fx-border-color: #cccccc; -fx-background-color: " + backgroundColor + ";");
         Node headerContent = createStepHeader(step, routeInfoDisplayer);
-
-
         if (headerContent instanceof Labeled labeled) {
             labeled.setFont(Font.font("Arial", 16));
             labeled.setStyle("-fx-font-weight: bold; -fx-text-fill: black;");
         }
-
-
         HBox headerBox = new HBox(headerContent);
         headerBox.setPadding(new Insets(6));
-
-
         HBox fromTo = new HBox(5);
         if (step.getMode().equalsIgnoreCase("WALK")) {
             if (index == 0) {
@@ -212,12 +237,10 @@ public class RoutePlanBuilder {
                     createStopLink(step.getTo(), popupManager)
             );
         }
-
         fromTo.setStyle("-fx-font-size: 14;");
         Label time = new Label("Indulás: " + step.getDeparture() + " • Érkezés: " + step.getArrival());
         time.setStyle("-fx-text-fill: #555;");
         time.setFont(Font.font("Arial", 13));
-
         Label duration = new Label();
         try {
             LocalTime start = LocalTime.parse(step.getDeparture(), DateTimeFormatter.ofPattern("HH:mm:ss"));
@@ -227,19 +250,24 @@ public class RoutePlanBuilder {
                     (step.getMode().equalsIgnoreCase("WALK") ? "Séta idő: " : "Utazási idő: ") + minutes + " perc");
             duration.setFont(Font.font("Arial", 13));
         } catch (Exception ignored) {}
-
         card.getChildren().addAll(headerBox, fromTo, time, duration);
         return card;
     }
-
-
+    /**
+     * Létrehoz egy szakaszelválasztót
+     * @return egy Label komponens "Következő szakasz" felirattal
+     */
     private static Label createSectionSeparator() {
         Label label = new Label("Következő szakasz");
         label.setStyle("-fx-text-fill: gray;");
         label.setFont(Font.font("Arial", 12));
         return label;
     }
-
+    /**
+     * Elmenti az útvonalat egy PDF fájlba
+     * @param routeLayout a teljes útvonal elrendezése (VBox)
+     * @param owner a hívó ablak Stage-je, amelyhez a FileChooser kapcsolódik
+     */
     private static void exportRouteAsPdf(VBox routeLayout, Stage owner) {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Útvonal mentése PDF-be");
@@ -272,12 +300,14 @@ public class RoutePlanBuilder {
             new Alert(Alert.AlertType.ERROR, "Hiba történt a PDF mentés során:\n" + ex.getMessage()).showAndWait();
         }
     }
-
-
+    /**
+     * Létrehozza egy lépés fejlécét (járat vagy séta megjelenítése, színezve).
+     * @param step az adott lépés
+     * @param routeInfoDisplayer a járat információ megjelenítéséért felelős komponens
+     * @return egy Node, amely a fejléc lesz
+     */
     private static Node createStepHeader(PathStep step, RouteInfoDisplayer routeInfoDisplayer) {
         String mode = step.getMode().toUpperCase();
-
-        // Emoji ikon hozzárendelése a módhoz
         String icon = switch (mode) {
             case "BUS" -> "\uD83D\uDE8C ";
             case "TRAM" -> "\uD83D\uDE8A ";
@@ -286,23 +316,30 @@ public class RoutePlanBuilder {
             case "RAIL" -> "\uD83D\uDE82 ";
             case "COACH" -> "\uD83D\uDE8D ";
             case "TROLLEYBUS" -> "\uD83D\uDE8E";
-            default -> "⬛ ";
+            default -> "\u2B1B ";
         };
-
 
         String backgroundColor;
         String textColor;
 
         if (mode.equals("SUBWAY")) {
             String line = step.getLabel() != null ? step.getLabel().toUpperCase() : "";
-            backgroundColor = switch (line) {
-                case "[SUBWAY] M1" -> Colors.M1_COLOR;
-                case "[SUBWAY] M2" -> Colors.M2_COLOR;
-                case "[SUBWAY] M3" -> Colors.M3_COLOR;
-                case "[SUBWAY] M4" -> Colors.M4_COLOR;
-                default -> Colors.getTitleColor("M3");
-            };
-            textColor = Colors.getTextColor("M3");
+            if (line.contains("M1")) {
+                backgroundColor = Colors.getTitleColor("M1");
+                textColor = Colors.getTextColor("M1");
+            } else if (line.contains("M2")) {
+                backgroundColor = Colors.getTitleColor("M2");
+                textColor = Colors.getTextColor("M2");
+            } else if (line.contains("M3")) {
+                backgroundColor = Colors.getTitleColor("M3");
+                textColor = Colors.getTextColor("M3");
+            } else if (line.contains("M4")) {
+                backgroundColor = Colors.getTitleColor("M4");
+                textColor = Colors.getTextColor("M4");
+            } else {
+                backgroundColor = Colors.getTitleColor("SUBWAY");
+                textColor = Colors.getTextColor("SUBWAY");
+            }
         } else {
             backgroundColor = Colors.getTitleColor(mode);
             textColor = Colors.getTextColor(mode);
@@ -324,14 +361,16 @@ public class RoutePlanBuilder {
 
         return headerBox;
     }
-
+    /**
+     * Létrehoz egy ScrollPane-t, amely görgethetővé teszi az útvonalat.
+     * @param content a megjelenítendő VBox tartalom
+     * @return a ScrollPane komponens
+     */
 
     private static ScrollPane createScrollableContent(VBox content) {
         ScrollPane scroll = new ScrollPane(content);
         scroll.setFitToWidth(true);
-        scroll.setPrefViewportHeight(400);
+        scroll.setPrefViewportHeight(600);
         return scroll;
     }
-
-
 }

@@ -10,9 +10,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 /**
- * A StopService osztály a megállók lekérdezéséért felelős.
+ * A StopService osztály a megállók lekérdezéséért felelős,
  * Képes megállók keresésére név vagy földrajzi pozíció alapján,
- * illetve útvonalakhoz tartozó megállólisták lekérdezésére.
+ * útvonalakhoz tartozó megállólisták lekérdezésére.
  */
 public class StopService {
     private final StopApi stopApi;
@@ -20,13 +20,12 @@ public class StopService {
     /**
      * Konstruktor, amely inicializálja a StopApi és TripApi példányokat.
      */
-
     public StopService() {
         this.stopApi = new StopApi();
         this.tripApi = new TripApi();
     }
     /**
-     * Megjeleníti a konzolon az adott koordináták közelében található megállók nevét és pozícióját.
+     * DEBUGHoz Megjeleníti a konzolon az adott koordináták közelében található megállók nevét és pozícióját
      *
      * @param lat szélességi koordináta
      * @param lon hosszúsági koordináta
@@ -43,11 +42,11 @@ public class StopService {
         }
     }
     /**
-     * Lekéri az adott koordináták körüli megállókat 500 méteres körzetben.
+     * Lekéri az adott koordináták körüli megállókat 500 méteres körzetben
      *
      * @param lat szélességi koordináta
      * @param lon hosszúsági koordináta
-     * @return a környező megállók listája {@link StopDTO} formában
+     * @return a közeli megállók listája {@link StopDTO} formában
      */
 
     public List<StopDTO> getStops(double lat, double lon) {
@@ -62,24 +61,7 @@ public class StopService {
             return List.of();
         }
     }
-    /**
-     * Megállóazonosító lekérdezése egy megállónév alapján.
-     *
-     * @param name a megálló neve
-     * @return az első találat ID-ja, vagy null, ha nem található
-     */
 
-    public String getStopIdByName(String name) {
-        try {
-            List<StopDTO> stops = getStopsByName(name);
-            if (!stops.isEmpty()) {
-                return stops.get(0).getId();
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
 
     private StopDTO mapToDTO(TransitStop stop) {
         return new StopDTO(stop.getName(), stop.getLat(), stop.getLon(), stop.getId());
@@ -103,7 +85,7 @@ public class StopService {
         return null;
     }
     /**
-     * Megállók listája név alapján.
+     * Megállók listája név alapján
      *
      * @param query keresési kifejezés (megállónév)
      * @return a találatok listája {@link StopDTO} formában
@@ -120,7 +102,7 @@ public class StopService {
         }
     }
     /**
-     * Lekéri egy járathoz tartozó megállókat.
+     * Lekéri egy járathoz tartozó megállókat
      *
      * @param tripId a járat azonosítója
      * @return megállók listája az adott járathoz
@@ -134,24 +116,7 @@ public class StopService {
             return Collections.emptyList();
         }
     }
-    /**
-     * Lekéri a megadott nevű megálló körüli megállókat adott sugarú körben.
-     *
-     * @param name         középpont megálló neve
-     * @param radiusMeters sugár méterben
-     * @return közeli megállók listája
-     */
 
-    public List<StopDTO> getNearbyStopsByName(String name, double radiusMeters) {
-        StopDTO center = getStopByName(name);
-        if (center == null) return List.of();
-
-        List<StopDTO> nearby = getStops(center.getLat(), center.getLon());
-
-        return nearby.stream()
-                .filter(stop -> calculateDistance(center.getLat(), center.getLon(), stop.getLat(), stop.getLon()) <= radiusMeters)
-                .collect(Collectors.toList());
-    }
     /**
      * Kiszámítja két földrajzi pont közötti távolságot méterben.
      *
@@ -163,7 +128,7 @@ public class StopService {
      */
 
     private double calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-        final int R = 6371000; // Earth radius in meters
+        final int R = 6371000; //föld sugara méterben
         double dLat = Math.toRadians(lat2 - lat1);
         double dLon = Math.toRadians(lon2 - lon1);
         double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
@@ -172,39 +137,7 @@ public class StopService {
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
         return R * c;
     }
-    /**
-     * Lekéri a középpontot is tartalmazó közeli megállók listáját.
-     *
-     * @param name         középpont megálló neve
-     * @param radiusMeters sugár méterben
-     * @return közeli megállók listája a középponttal együtt
-     */
 
-    public List<StopDTO> getNearbyStopsIncludingCenter(String name, double radiusMeters) {
-        StopDTO center = getStopByName(name);
-        if (center == null) return List.of();
-
-        List<StopDTO> nearby = getStops(center.getLat(), center.getLon());
-
-        return nearby.stream()
-                .filter(stop -> calculateDistance(center.getLat(), center.getLon(), stop.getLat(), stop.getLon()) <= radiusMeters)
-                .collect(Collectors.toList());
-    }
-    /**
-     * Visszaadja egy megálló koordinátáit (latitude,longitude) formátumban.
-     *
-     * @param stopName a megálló neve
-     * @return koordináták szövegként vagy null
-     */
-
-    public String getCoordinatesByStopName(String stopName) {
-        StopDTO stop = getStopByName(stopName);
-
-        if (stop != null) {
-            return stop.getLat() + "," + stop.getLon();
-        }
-        return null;
-    }
 
 
 

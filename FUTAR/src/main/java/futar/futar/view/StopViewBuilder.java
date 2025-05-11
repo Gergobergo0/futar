@@ -4,7 +4,19 @@ import futar.futar.utils.UIUtils;
 import futar.futar.model.DepartureDTO;
 import java.util.List;
 
+/**
+ * megadott megállóhoz tartozó indulások ablak HTML generálása
+ */
 public class StopViewBuilder {
+    /**
+     * Megépíti a megállóhoz tartozó indulási információk HTML tartalmát,
+     * megjeleníti a megálló nevét, kedvenc gombot, valamint a következő járatokat listázza.
+     * @param stopId a megálló egyedi azonosítója
+     * @param stopName a megálló neve, amely megjelenik a fejlécben
+     * @param departures a megállóból induló járatok listája {@link DepartureDTO} formában
+     * @param isFavorite igaz, ha a megálló jelenleg kedvenc
+     * @return egy HTML string, amely megjeleníti a teljes popup tartalmát
+     */
     public String build(String stopId, String stopName, List<DepartureDTO> departures, boolean isFavorite) {
         StringBuilder html = new StringBuilder();
 
@@ -34,8 +46,13 @@ public class StopViewBuilder {
             String route = dep.getRoute();
             long minutes = dep.getMinutes();
             String displayTime = minutes < 0 ? "" : minutes == 0 ? "MOST" : minutes + " perc múlva";
-            String backgroundColor = Colors.getTitleColor(dep.getType());
-            String textColor = Colors.getTextColor(dep.getType());
+            String routeType = dep.getType();
+            String routeName = dep.getRoute();
+
+            String typeForColor = routeType.equalsIgnoreCase("SUBWAY") ? routeName.toUpperCase() : routeType.toUpperCase();
+
+            String backgroundColor = Colors.getTitleColor(typeForColor);
+            String textColor = Colors.getTextColor(typeForColor);
             System.out.println("[STOPVIEWBUILDER] routeType=" + dep.getType() + " routeName=" + dep.getRoute());
 
 

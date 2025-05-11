@@ -34,7 +34,7 @@ public class MapController {
         this.favoriteHandler = new FavoriteHandler(favoriteManager);
         this.stopMarkerDisplayer = new StopMarkerDisplayer(mapInitializer);
         this.popupManager = new PopupManager(mapInitializer, favoriteManager, stopMarkerDisplayer, favoriteHandler);
-        favoriteHandler.setRefreshCallback(() -> popupManager.notifyPopupRefreshNeeded());
+        favoriteHandler.setRefreshCallback(() -> popupManager.notifyPopupRefresh());
 
         this.routeInfoDisplayer = new RouteInfoDisplayer(popupManager);
         stopInfoDisplayer = new StopInfoDisplayer(popupManager);
@@ -86,7 +86,7 @@ public class MapController {
         favoriteHandler.setSelectedStop(stopId, stopName);
         favoriteHandler.toggleFavorite();
 
-        popupManager.notifyPopupRefreshNeeded(); // UI újrarajzolás
+        popupManager.notifyPopupRefresh(); // UI újrarajzolás
     }
 
 
@@ -140,9 +140,10 @@ public class MapController {
     }
 
 
-
-
-
+    /**
+     * Amikor kattintás történik egy útvonalra megnyílik az ablak hozzá
+     * @param tripId    járat azonosítója
+     */
     public void handleRouteClick(String tripId) {
         routeInfoDisplayer.displayRouteInfo(tripId);
     }

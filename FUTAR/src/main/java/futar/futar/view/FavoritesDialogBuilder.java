@@ -14,9 +14,20 @@ import javafx.scene.layout.VBox;
 
 import java.util.List;
 
+/**
+ * A javafx kedvencek ablakát hozza létre, megállókat, útvonalakat jelenít meg, biztosítja h ezok kattinthatók legyenek
+ */
 public class FavoritesDialogBuilder {
     private static StopService stopService = new StopService();
 
+    /**
+     * létrehoz egy javaFX ablakot, amiben megjelennek a kedvenc megállók, útvonalak
+     * @param favoriteManager kedvenc útvonalakat, megállókat kezelő osztály
+     * @param onRefresh frissítési callback, ami akkor hívódik meg ha változás történik
+     * @param popupManager  popupokat kezelő objektum
+     * @param stopMarkerDisplayer   térképen megjelenítő markereket kezelő osztály
+     * @return egy {@link Dialog} példány, amely megjeleníti a kedvenceket
+     */
     public static Dialog<Void> build(FavoriteManager favoriteManager, Runnable onRefresh, PopupManager popupManager, StopMarkerDisplayer stopMarkerDisplayer) {
         Dialog<Void> dialog = new Dialog<>();
         dialog.setTitle("Kedvencek");
@@ -40,8 +51,16 @@ public class FavoritesDialogBuilder {
         return dialog;
     }
 
-    //ÚJ metódus a FavoritesDialogBuilder-ben
-
+    /**
+     * Frissíti a VBOX tartalmát a jelenlegi kedvencek alapján
+     * újratölti a kedvenc útvonalak és megállókat
+     * @param container frissítendő VBOX
+     * @param favoriteManager a kedvenc megállók és útvonalak kezelője
+     * @param onRefresh callback függvény frissítéshez újramegjelenítéshez
+     * @param popupManager a popup megjelenítést kezelő komponens
+     * @param dialog a dialógus, amely frissítés után is aktív marad
+     * @param routePlannerController az útvonaltervező vezérlő, amely egy útvonal kiválasztása esetén meghívódik
+     */
     public static void refreshContent(VBox container, FavoriteManager favoriteManager, Runnable onRefresh, PopupManager popupManager, Dialog<?> dialog, RoutePlannerController routePlannerController) {
         container.getChildren().clear();
 
@@ -89,6 +108,20 @@ public class FavoritesDialogBuilder {
         }
     }
 
+    /**
+     * kedvenc megállóhoz tartozó HBOX sor
+     * Kattintható a megálló, szerkeszthető, törölhető
+     * @param stop a megjelenítendő kedvenc megálló
+     * @param favoriteManager a kedvenceket kezelő osztály
+     * @param popupManager popupok kezelése megálló megnyitásához
+     * @param stopMarkerDisplayer a térképen való megjelenítésért felelős komponens
+     * @param dialog a teljes dialógus referenciája
+     * @param onRefresh frissítési callback (ha nem újratöltjük a konténert)
+     * @param container a VBox, ha újratöltésre van szükség
+     * @param routePlannerController opcionálisan átadott útvonalvezérlő
+     * @param refreshInsteadOfClose true esetén a dialógus újratölt, nem záródik be (útvonalnézetnél hasznos)
+     * @return egy sor HBox, amely megjeleníti a kedvenc megállót és annak vezérlőgombjait
+     */
     private static HBox buildStopRow(
             FavoriteStop stop,
             FavoriteManager favoriteManager,

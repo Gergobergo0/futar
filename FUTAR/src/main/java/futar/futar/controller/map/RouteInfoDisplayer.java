@@ -11,39 +11,35 @@ import org.openapitools.client.api.DefaultApi;
 import java.util.List;
 import java.util.Optional;
 /**
- * Felelős egy adott járat útvonalának (megállóinak) megjelenítéséért a lebegő popupban.
+ * Adott járat információinak megjelnítéséért osztály
  * <p>
- * A {@link PopupManager} segítségével HTML tartalmat épít és jelenít meg.
+ * A {@link PopupManager} segítségével HTML tartalmat épít és jelenít meg
  */
 public class RouteInfoDisplayer {
     /**
-     * A popupok kezeléséért felelős komponens.
+     * A popupok kezeléséért felelős kobjektum
      */
-
     private final PopupManager popupManager;
     /**
-     * A járatnév lekérdezését végző szolgáltatás.
+     * A járatnév lekérdezését végző service osztály
      */
-
     private final DepartureService departureService;
     /**
-     * Létrehozza az útvonalmegjelenítő példányt.
+     * Létrehozza az útvonalmegjelenítő példányt
      *
      * @param popupManager a popupok kezeléséért felelős osztály
      */
-
     public RouteInfoDisplayer(PopupManager popupManager) {
         this.popupManager = popupManager;
         this.departureService = new DepartureService();
     }
     /**
-     * Lekéri a járat összes megállóját, összeállítja a HTML-t és megjeleníti a popupot.
+     * Lekéri a járat összes megállóját, összeállítja a HTML-t és megjeleníti a popupot
      * <p>
-     * A háttérszálban történik az adatok betöltése, és a JavaFX UI szálon a megjelenítés.
+     * A háttérszálban történik az adatok betöltése, és a UI szálon a megjelenítés.
      *
      * @param tripId a lekérdezendő járat azonosítója
      */
-
     public void displayRouteInfo(String tripId) {
         new Thread(() -> {
             try {
@@ -61,11 +57,11 @@ public class RouteInfoDisplayer {
                 String html = popupManager.getRouteViewBuilder().build(routeName, routeType, stops);
 
                 popupManager.setActiveTripId(tripId);
-                popupManager.startAutoRefresh(); // Indítsd itt is!
+                popupManager.startAutoRefresh();
 
                 Platform.runLater(() -> {
                     popupManager.clearFloatingPopup();
-                    popupManager.showFloatingPopup("Járat nézet", html);
+                    popupManager.showPopup("Járat nézet", html);
                 });
 
             } catch (Exception e) {

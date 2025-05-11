@@ -20,7 +20,7 @@ import futar.futar.model.FavoriteStop;
 
 /**
  * A FavoriteManager osztály kezeli a kedvenc megállók és útvonalak tárolását és elérését.
- * Singleton minta alapján működik, és JSON fájlba menti az adatokat.
+ * Singleton alapján működik, és JSON fájlba menti az adatokat.
  */
 public class FavoriteManager {
     private static FavoriteManager instance;
@@ -36,7 +36,7 @@ public class FavoriteManager {
     }
 
     /**
-     * Singleton példány lekérdezése.
+     * Singleton példány lekérdezése
      *
      * @return a FavoriteManager egyetlen példánya
      */
@@ -79,7 +79,7 @@ public class FavoriteManager {
         }
     }
     /**
-     * Megvizsgálja, hogy a megadott megálló szerepel-e a kedvencek között.
+     * Megnézi, hogy a megadott megálló szerepel-e a kedvencek között.
      *
      * @param stopId a megálló azonosítója
      * @return true, ha kedvenc, különben false
@@ -96,14 +96,14 @@ public class FavoriteManager {
 
     public List<FavoriteStop> getFavoriteStops() { return favoriteStops; }
     /**
-     * Lekéri az összes kedvenc útvonalat.
+     * Lekéri az összes kedvenc útvonalat
      *
      * @return a kedvenc útvonalak listája
      */
 
     public List<FavoriteRoute> getFavoriteRoutes() { return favoriteRoutes; }
     /**
-     * Hozzáad egy új megállót a kedvencekhez, majd elmenti az adatokat.
+     * Hozzáad egy új megállót a kedvencekhez, elmenti
      *
      * @param stop a hozzáadandó megálló
      */
@@ -113,7 +113,7 @@ public class FavoriteManager {
         save();
     }
     /**
-     * Hozzáad egy új útvonalat a kedvencekhez, majd elmenti az adatokat.
+     * Hozzáad egy új útvonalat a kedvencekhez, majd elmenti
      *
      * @param route a hozzáadandó útvonal
      */
@@ -123,7 +123,7 @@ public class FavoriteManager {
         save();
     }
     /**
-     * Eltávolít egy megállót a kedvencek közül azonosító alapján, majd elmenti az adatokat.
+     * Eltávolít egy megállót a kedvencek közül azonosító alapján, ment
      *
      * @param stopId a törlendő megálló azonosítója
      */
@@ -133,7 +133,7 @@ public class FavoriteManager {
         save();
     }
     /**
-     * Eltávolít egy útvonalat a kedvencek közül a kiinduló és célmegálló alapján.
+     * Eltávolít egy útvonalat a kedvencek közül a kiinduló és célmegálló alapján
      *
      * @param from a kiinduló megálló neve
      * @param to   a célmegálló neve

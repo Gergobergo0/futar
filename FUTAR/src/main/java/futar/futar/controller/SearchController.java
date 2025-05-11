@@ -18,11 +18,11 @@ import java.util.stream.Collectors;
 import futar.futar.controller.map.MapController;
 import java.util.HashMap;
 /**
- * A keresési mező kezeléséért felelős vezérlő, amely javaslatokat jelenít meg,
- * lekérdezi a megállókat, és megjeleníti azokat a térképen.
+ *A keresési mező kezeléséért felelős vezérlő, amely javaslatokat jelenít meg,
+ * lekérdezi a megállókat, és megjeleníti azokat a térképen
  */
 public class SearchController {
-    /** A keresési javaslatok gyorsítótára (név alapján csoportosítva). */
+    /** A keresési javaslatok gyorsítótára (név alapján csoportosítva) */
 
     private final Map<String, List<StopDTO>> suggestionCache = new HashMap<>();
     private TextField searchField;
@@ -32,7 +32,7 @@ public class SearchController {
     private final StopMarkerDisplayer stopMarkerDisplayer;
     private final PopupManager popupManager;
     /**
-     * Konstruktor a kereső vezérlőhöz.
+     * Konstruktor a kereső controller-hez
      *
      * @param searchField    a keresőmező (TextField)
      * @param debounce       késleltetett keresés (debounce) objektum
@@ -46,7 +46,7 @@ public class SearchController {
     }
 
     /**
-     * Beállítja a keresőmező eseményfigyelőjét, amely a felhasználó gépelése alapján
+     *Beállítja a keresőmező eseményfigyelőjét, amely a felhasználó gépelése alapján
      * debouncolva meghívja a javaslatok lekérdezését.
      */
 
@@ -65,7 +65,7 @@ public class SearchController {
 
 
     /**
-     * Lekéri a megállók javaslatait a megadott keresőkifejezés alapján,
+     * Lekéri a megállók javaslatait a megadott keresés alapján,
      * és megjeleníti őket a javaslatmenüben.
      *
      * @param query a keresett kifejezés
@@ -119,10 +119,9 @@ public class SearchController {
     }
 
     /**
-     * Kézi keresés indítása gombnyomásra vagy más eseményre.
+     * Keresés indítása gombnyomásra
      * Megjeleníti a megállókat a térképen vagy hibát, ha nincs találat.
      */
-
     public void performSearch() {
         String query = searchField.getText().trim();
         if (query.isEmpty()) return;
@@ -135,7 +134,11 @@ public class SearchController {
         });
     }
 
-
+    /**
+     * háttérszálón elindítja a keresést egy kifejezés alapján
+     * @param query     kersési kifejezés pl.: ast...
+     * @param callback  lambda függvény amit egy lekérdezés után meghívjunk
+     */
     private void queryStops(String query, Consumer<List<StopDTO>> callback) {
         new Thread(() -> {
             List<StopDTO> stops = stopService.getStopsByName(query);

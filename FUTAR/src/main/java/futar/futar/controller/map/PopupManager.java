@@ -19,7 +19,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 /**
- * Kezeli a lebegő popup ablakokat, azok tartalmának dinamikus frissítését, valamint az előnézeti útvonalakat.
+ * kezeli a térképen megjelenő popup ablakokat, azok frissítését, az előnézeti légvonal csík megjeleníétését
+ * összekapcsolja a javaFX webview-t a JS kóddal, kezeli a kedvencek popup-ot
  * <p>
  * A JavaScript felülettel való kommunikációt a {@link MapInitializer} segítségével valósítja meg.
  */
@@ -54,16 +55,16 @@ public class PopupManager {
         this.stopMarkerDisplayer =  stopMarkerDisplayer;
         this.favoriteHandler = favoriteHandler;
 
-        //A js 'window' objektumhoz és hozzájuk a Java oldali kedvenc kezelő
+        //A js window objektumhoz és hozzájuk a Java oldali kedvenc kezelő
         JSObject window = getJsWindow();
         window.setMember("java", favoriteHandler);
 
 
     }
     /**
-     * Beállítja az aktív járatot, törli az előző stop adatokat.
+     * beállítja az aktív járatot és törli a kiválasztott megállókat
      *
-     * @param tripId az útvonal/járat azonosítója
+     * @param tripId az járat azonosítója
      */
     public void setActiveTripId(String tripId)
     {
@@ -72,14 +73,13 @@ public class PopupManager {
         this.lastTripId = tripId;
     }
     /**
-     * Megjeleníti egy megálló indulásait popupban, és elindítja az automatikus frissítést.
+     * Megjeleníti egy megálló indulásait popupban, és elindítja az automatikus frissítést
      *
-     * @param stopId az érintett megálló azonosítója
+     * @param stopId a megálló azonosítója
      * @param name   a megálló neve
      * @param lat    földrajzi szélesség
      * @param lon    földrajzi hosszúság
      */
-
     public void showDepartures(String stopId, String name, double lat, double lon) {
         this.lastTripId = null; //előző útvonal nézet törlése
         updateSelectedStop(stopId, name);
@@ -100,9 +100,8 @@ public class PopupManager {
     }
 
     /**
-     * Újratölti a jelenlegi popup tartalmát: indulásokat vagy útvonalat.
+     * frissíti a popup tartalmát a popup (trip/stop) típusa alapján
      */
-
     public void refreshPopupContent() {
         System.out.println("[JAVA] PopupContent frissítve");
         if (lastStopId != null && lastStopName != null) { //h
@@ -120,7 +119,7 @@ public class PopupManager {
                     System.out.println("POPUPMANAGER: " + routeType);
                     String html = routeViewBuilder.build(routeName, routeType, stops);
                     Platform.runLater(() -> {
-                        showFloatingPopup("Járat nézet", html);
+                        showPopup("Járat nézet", html);
                     });
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -129,6 +128,13 @@ public class PopupManager {
         }
     }
 
+    /**
+     * megjeleníti a kiválasztott megálló alapján az indulási információkat
+     * @param stopId    megálló id
+     * @param name      megálló név
+     * @param lat       szélesség
+     * @param lon       hosszúság
+     */
     public void loadAndShowStopPopup(String stopId, String name, double lat, double lon) {
 
         updateSelectedStop(stopId, name);
@@ -152,31 +158,32 @@ public class PopupManager {
     }
 
     /**
-     * Megjeleníti a lebegő popupot a megadott HTML tartalommal.
      */
-
-    public void showFloatingPopup(String title, String htmlContent) {
+    /**
+     * Megjeleníti a popupot a megadott HTML tartalommal
+     * @param title popup címe
+     * @param htmlContent HTML tartalom
+     */
+    public void showPopup(String title, String htmlContent) {
         startAutoRefresh(); //frissítés indítása
-        String escapedHtml = UIUtils.escapeJs(htmlContent); //html escape js-hez
-        String escapedTitle = UIUtils.escapeJs(title); //cím escape js-hez
+        String escapedHtml = UIUtils.escapeJs(htmlContent);
+        String escapedTitle = UIUtils.escapeJs(title);
 
         mapInitializer.executeScript("showFloatingPopup('" + escapedTitle + "', '" + escapedHtml + "')"); //js-ben meghívja a
     }
 
 
     /**
-     * Elindítja az automatikus frissítést 30 másodpercenként.
+     * Elindítja az automatikus frissítést 30 másodpercenként
      */
-
     protected void startAutoRefresh() {
         stopAutoRefresh();
         scheduler = Executors.newSingleThreadScheduledExecutor();
         scheduler.scheduleAtFixedRate(() -> Platform.runLater(this::refreshPopupContent), 30, 30, TimeUnit.SECONDS);
     }
     /**
-     * Leállítja az automatikus popup frissítést.
+     * Leállítja az automatikus popup frissítést
      */
-
     public void stopAutoRefresh() {
         if (scheduler != null && !scheduler.isShutdown()) {
             scheduler.shutdownNow();
@@ -197,7 +204,7 @@ public class PopupManager {
     /**
      * Elindítja a popup újratöltését a JavaFX UI szálon.
      */
-    public void notifyPopupRefreshNeeded() {
+    public void notifyPopupRefresh() {
         Platform.runLater(this::refreshPopupContent);
     }
 
@@ -216,7 +223,7 @@ public class PopupManager {
     }
 
     /**
-     * Automatikus előnézet útvonalhoz, ha a "Honnan" és "Hová" meg van adva.
+     * Automatikus előnézet útvonalhoz, ha a "Honnan" és "Hová" meg van adva
      */
     public void tryShowRoutePreview(String fromName, String toName) {
         if (fromName == null || toName == null || fromName.isBlank() || toName.isBlank()) return;
@@ -247,9 +254,15 @@ public class PopupManager {
 
 
     /**
-     * Kiszámítja a két pont közti távolságot földrajzi koordináták alapján (Haversine-formula).
      */
-
+    /**
+     * Kiszámítja a két pont közti távolságot földrajzi koordináták alapján (Haversine-formula).
+     * @param lat1  kiinduló szélesség
+     * @param lon1  kiinduló hosszúság
+     * @param lat2  cél szélesség
+     * @param lon2  cél hosszúság
+     * @return
+     */
     private double calculateDistanceKm(double lat1, double lon1, double lat2, double lon2) {
         final int R = 6371; //föld radiusa (km)
         double dLat = Math.toRadians(lat2 - lat1);
@@ -264,7 +277,6 @@ public class PopupManager {
     /**
      * Törli a térképen megjelenített útvonal előnézetet.
      */
-
     public void clearRoutePreview() {
         Platform.runLater(() -> {
             JSObject window = getJsWindow();
@@ -272,10 +284,10 @@ public class PopupManager {
         });
     }
 
-    /**
-     * Eltávolítja a lebegő popup DOM elemét.
-     */
 
+    /**
+     * eltávolítja a popupot
+     */
     public void clearFloatingPopup() {
                 mapInitializer.executeScript("""
             var popup = document.getElementById("floating-popup");
@@ -284,12 +296,22 @@ public class PopupManager {
 
     }
 
+    /**
+     * frissíti a kiválasztott megálló adatait, átadja a favoriteHandler-nek is
+     * @param stopId    megálló id
+     * @param name      megálló név
+     */
     public void updateSelectedStop(String stopId, String name) {
         this.lastStopId = stopId;
         this.lastStopName = name;
         favoriteHandler.setSelectedStop(stopId, name);
     }
 
+    /**
+     * Beállítja a js oldalon a kiválasztott megálló adatait
+     * @param stopId megálló azonosítója
+     * @param name megálló neve
+     */
     private void updateJsSelectedStop(String stopId, String name) {
         Platform.runLater(() -> {
             JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");

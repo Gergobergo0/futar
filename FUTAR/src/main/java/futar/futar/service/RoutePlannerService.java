@@ -10,15 +10,15 @@ import futar.futar.api.RoutePlannerApi;
 import java.time.*;
 import java.util.List;
 /**
- * A RoutePlannerService felelős az útvonaltervezési kérelmek elküldéséért az OpenAPI felé,
- * és a válasz feldolgozásáért egy TransitRoute objektummá.
+ * A RoutePlannerService felelős az útvonaltervezési kérések elküldéséért az OpenAPIhoz
+ * feldolgozza a választ TransitRoute objektummá
  */
 
 public class RoutePlannerService {
     private final RoutePlannerApi api = new RoutePlannerApi();
 
     /**
-     * Konstruktor, amely inicializálja az API klienst.
+     * Konstruktor, amely inicializálja az API klienst
      */
 
     public RoutePlannerService() {
@@ -96,21 +96,14 @@ public class RoutePlannerService {
 
 
 
-    private LocalTime extractLocalTime(Object time) {
-        if (time instanceof OffsetDateTime odt) {
-            return odt.toLocalTime();
-        } else if (time instanceof Long millis) {
-            return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
-        } else if (time instanceof String raw && raw.matches("\\d{13}")) {
-            long millis = Long.parseLong(raw);
-            return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
-        }
-        return null;
-    }
-
+    /**
+     * Tetszőleges időformátumot alakít HH:mm-re
+     * @param time idő bármilyen típusban
+     * @return
+     */
     private String formatAnyTime(Object time) {
         try {
-            LocalTime lt = extractLocalTime(time);
+            LocalTime lt = parseToLocalTime(time);
             return lt != null ? lt.toString() : null;
         } catch (Exception e) {
             System.err.println("[JAVA] ROutePlannerService.formatAnyTime(): " + time + " -> " + e.getMessage());
@@ -118,14 +111,27 @@ public class RoutePlannerService {
         }
     }
 
+    /**
+     * többféle időtípusból epoch, millis, String konvertálja a dátumot LocalTime-ra
+     * @param time idő többféle formában
+     * @return időpont LocalTime típusban
+     */
     private LocalTime parseToLocalTime(Object time) {
         try {
-            return extractLocalTime(time);
+            if (time instanceof OffsetDateTime odt) {
+                return odt.toLocalTime();
+            } else if (time instanceof Long millis) {
+                return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
+            } else if (time instanceof String raw && raw.matches("\\d{13}")) {
+                long millis = Long.parseLong(raw);
+                return Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalTime();
+            }
         } catch (Exception e) {
-            System.err.println("[JAVA] RoutePlannerService.parseToLocalTime(): " + time + " -> " + e.getMessage());
-            return null;
+            System.err.println("[JAVA] parseToLocalTime(): " + time + " -> " + e.getMessage());
         }
+        return null;
     }
+
 
 
 

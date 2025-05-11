@@ -6,28 +6,26 @@ import netscape.javascript.JSObject;
 
 import java.util.List;
 /**
- * Felelős a megállók térképen való megjelenítéséért (marker elhelyezése), valamint azok törléséért.
+ * Felelős a megállók térképen való markerek megjelenítéséért
  * <p>
- * A JavaScript oldalhoz a {@link MapInitializer} segítségével kapcsolódik.
+ * A JavaScript oldalhoz a {@link MapInitializer} segítségével kapcsolódik
  */
 
 public class StopMarkerDisplayer {
     /**
-     * A WebView motor, amely lehetővé teszi Java ↔ JavaScript kommunikációt.
+     * WebView a js<->java kommunikációhoz
      */
-
     private final MapInitializer mapInitializer;
     /**
-     * Létrehozza a markermegjelenítőt a térképen való JavaScript műveletekhez.
+     * Létrehozza a markermegjelenítőt a térképen való JS műveletekhez.
      *
      * @param mapInitializer a WebEngine inicializálója
      */
-
     public StopMarkerDisplayer(MapInitializer mapInitializer) {
         this.mapInitializer = mapInitializer;
     }
     /**
-     * Több megállót jelenít meg a térképen, és ha szükséges, az első megállóra popupot is nyit.
+     * Több megállót is megjelenít a térképen, automatikus popup ablak megnyitása
      *
      * @param stops     a megjelenítendő megállók listája
      * @param openPopup ha {@code true}, az első megállóra automatikusan nyit egy popupot
@@ -68,9 +66,8 @@ public class StopMarkerDisplayer {
     }
 
     /**
-     * Törli a térképen megjelenített megállókat és útvonalakat.
+     * Törli a térképen megjelenített megállókat és útvonalakat
      */
-
     public void clearMap() {
         JSObject window = (JSObject) mapInitializer.getWebEngine().executeScript("window");
         window.call("clearStops");

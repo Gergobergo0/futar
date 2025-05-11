@@ -23,12 +23,13 @@ import java.util.stream.Collectors;
 
 import javafx.util.Duration;
 /**
- * Az útvonaltervező vezérlőosztály, amely kezeli a megállók kiválasztását,
- * az idő és dátum beállításokat, és az útvonal kiszámítását.
+ * Ez az osztály felelős az UI és útvonaltervezési logika összekötéséért.
+ * Kezeli a kiindulási, célállomási beviteli mezőket, dátum, idő bellításokat, az útvonal kiszámítását.
+ * Automatikus javaslatokat nyújt a megállónevek kereséséhez, megjeleníti az útvonal előnézetet
  */
 
 public class RoutePlannerController {
-    // UI elemek és szolgáltatások
+
 
     private final Spinner<Integer> hourSpinner;
     private final Spinner<Integer> minuteSpinner;
@@ -46,6 +47,9 @@ public class RoutePlannerController {
     private Spinner<Integer> walkDistanceSpinner;
     private ComboBox<String> walkSpeedBox;
 
+    /**
+     * belső osztály az útvonal paraméterek egységesítése érdekében
+     */
     private static final class RouteParameters {
         String departure;
         String arrival;
@@ -56,10 +60,18 @@ public class RoutePlannerController {
         double walkSpeed;
     }
 
-    /**
-     * Konstruktor, beállítja az összes kapcsolódó mezőt és a keresés debounce-t.
-     */
 
+    /**
+     * Létrehozza a {@code RoutePlannerController} osztályt.
+     * @param departureField    indulási állomás beviteli mező
+     * @param arrivalField      érkezési állomás bevitel mező
+     * @param datePicker        dátumválasztó komponens
+     * @param hourSpinner       órát állító spinner
+     * @param minuteSpinner     percet állító spinner
+     * @param timeField         szöveges időmező (óra:perc)
+     * @param timeModeBox       mező az indulás/érkezés időhöz
+     * @param popupManager      javaslatok, előnézetekhez szükséges komponens
+     */
     public RoutePlannerController(TextField departureField, TextField arrivalField,
                                   DatePicker datePicker,
                                   Spinner<Integer> hourSpinner, Spinner<Integer> minuteSpinner, TextField timeField,
@@ -79,10 +91,12 @@ public class RoutePlannerController {
 
     }
 
-    /**
-     * Beállítja a gyaloglási távolság és sebesség mezőket.
-     */
 
+    /**
+     * (!NINCS MÖGÖTTE LOGIKA!)Beállítja a gyaloglás maximális távolságát és sebességét
+     * @param walkSpinner   Gyaloglás távolságát beállító spinner
+     * @param speedBox      //gyaloglás gyorsasásgát beállító legördülő menü
+     */
     public void setWalkControls(Spinner<Integer> walkSpinner, ComboBox<String> speedBox) {
         this.walkDistanceSpinner = walkSpinner;
         this.walkSpeedBox = speedBox;
@@ -92,18 +106,18 @@ public class RoutePlannerController {
         speedBox.setValue("ÁTLAGOS");
     }
 
-
+    /**
+     * beállítja az automatikus javaslatkezelést a cél és indulási állomásokhoz
+     */
     private void setupSuggestionHandlers() {
-        setupDebouncedSearch(departureField, fromDebounce, q -> triggerSuggestionWithQuery(departureField, departureSuggestionMenu, q));
-        setupDebouncedSearch(arrivalField, toDebounce, q -> triggerSuggestionWithQuery(arrivalField, arrivalSuggestionMenu, q));
+        setupDebouncedSearch(departureField, fromDebounce, q -> triggerSuggestion(departureField, departureSuggestionMenu, q));
+        setupDebouncedSearch(arrivalField, toDebounce, q -> triggerSuggestion(arrivalField, arrivalSuggestionMenu, q));
     }
 
 
-
     /**
-     * Beállítja az alapértelmezett dátumot és időt a jelenlegi időpontra.
+     * Aktuális dátum és időt beállítása az ui-n
      */
-
     public void setDefaultDateTime() {
         datePicker.setValue(LocalDate.now());
 
@@ -115,20 +129,20 @@ public class RoutePlannerController {
         minuteSpinner.getValueFactory().setValue(now.getMinute());
         timeModeBox.setValue("Indulás");
     }
-    /**
-     * Felcseréli a kiinduló és cél megállót.
-     */
 
+    /**
+     * felcseréli a kiválasztott indulási/érkezési megállókat
+     */
     public void swapStops() {
         String from = departureField.getText();
         String to = arrivalField.getText();
         departureField.setText(to);
         arrivalField.setText(from);
     }
-    /**
-     * Megtervezi az útvonalat a megadott beállítások alapján.
-     */
 
+    /**
+     * Elindítja az útvonaltervezést az UI-ban kitöltött információk alapján
+     */
     public void planRoute() {
         RouteParameters params = gatherRouteParameters();
         if (params == null) return;
@@ -139,14 +153,15 @@ public class RoutePlannerController {
         System.out.println("[JAVA] Útvonaltervezés: " + params.departure + " -> " + params.arrival +
                 " @ " + params.date + " " + params.time + " (" + params.mode + ")");
 
-        runRoutePlanningInBackground(params, stops[0], stops[1]);
+        runRoutePlanning(params, stops[0], stops[1]);
     }
 
 
     /**
-     * Egy kedvenc útvonal megadása alapján automatikusan kitölti a mezőket és elindítja a tervezést.
+     * Egy mentett útvonal alapján kitölti a mezőket, elindítja az útvonaltervezést
+     * @param from kiindulősi megálló
+     * @param to érkezési megálló
      */
-
     public void planFavoriteRoute(String from, String to) {
         departureField.setText(from);
         arrivalField.setText(to);
@@ -156,10 +171,14 @@ public class RoutePlannerController {
 
 
     /**
-     * Javaslatok megjelenítése egy adott mezőhöz.
      */
-
-    private void triggerSuggestionWithQuery(TextField field, ContextMenu menu, String text) {
+    /**
+     *      * Előkészíti a a keresési javaslatokat a megállónevekhez adott szöveg alapján
+     * @param field szövegmező ahova a felhasználü gépel
+     * @param menu  megjelenítendő javaslatmenü
+     * @param text  keresési szöveg
+     */
+    private void triggerSuggestion(TextField field, ContextMenu menu, String text) {
         if (text.length() < 2) {
             Platform.runLater(menu::hide);
             return;
@@ -194,12 +213,11 @@ public class RoutePlannerController {
     }
 
 
-
-
     /**
-     * Idő beállításának finomhangolása adott eltéréssel.
+     * localTime-ra alakítja a a szövegmezőt HH:mm formátumról, ha pl (1, -15) jelenik meg 1 órával előre és 15 percre visszaállítja az időt
+     * @param hourDelta óra eltérési érték
+     * @param minuteDelta perc eltérési érték
      */
-
     private void adjustTime(int hourDelta, int minuteDelta) {
         try {
             LocalTime time = LocalTime.parse(timeField.getText(), DateTimeFormatter.ofPattern("HH:mm"));
@@ -210,34 +228,46 @@ public class RoutePlannerController {
         }
     }
 
+    /**
+     * növeli az óra értékét a menüben
+     */
     public void onIncreaseHour() {
         adjustTime(1, 0);
     }
 
+    /**
+     * csökkenti az óra értékét a menüben
+     */
     public void onDecreaseHour() {
         adjustTime(-1, 0);
     }
 
+    /**
+     * növeli a perc értékét a menünen
+     */
     public void onIncreaseMinute() {
         adjustTime(0, 1);
     }
 
+    /**
+     * csökkenti a perc értékét a menüben
+     */
     public void onDecreaseMinute() {
         adjustTime(0, -1);
     }
-    /**
-     * A jelenlegi idő beállítása a Spinner mezőkbe.
-     */
 
+    /**
+     * jelenlegi időt állítja be a menüben
+     */
     public void onSetNow() {
         LocalTime now = LocalTime.now();
         hourSpinner.getValueFactory().setValue(now.getHour());
         minuteSpinner.getValueFactory().setValue(now.getMinute());
     }
-    /**
-     * Automatikus előnézet frissítése, ha fókusz elvész.
-     */
 
+    /**
+     * beállítja az automatikus javaslatkeresést a kiindulási és célállomásra
+     */
     private void setupFocusListeners() {
         departureField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (!newVal) {
@@ -251,12 +281,21 @@ public class RoutePlannerController {
         });
     }
 
-    private final PauseTransition fromDebounce = new PauseTransition(Duration.millis(500));
-    private final PauseTransition toDebounce = new PauseTransition(Duration.millis(500));
     /**
-     * Debounce alapú keresőmező beállítás.
+     * indulási mező keresési késlteltése
      */
+    private final PauseTransition fromDebounce = new PauseTransition(Duration.millis(500));
+    /**
+     * érkezési mező keresési késleltetése
+     */
+    private final PauseTransition toDebounce = new PauseTransition(Duration.millis(500));
 
+    /**
+     * késlelteti a keresést, hogy ne minden billentyűleütés után indítson ajánlási keresést, hanem csak ha a felhasználó rövid idő után nem gépel tovább
+     * @param field     megfigyelt menző
+     * @param debounce  PauseTransition időzítő
+     * @param onSearch  callback függvény , lefut ha kereshet
+     */
     public void setupDebouncedSearch(TextField field, PauseTransition debounce, Consumer<String> onSearch) {
         field.textProperty().addListener((obs, oldText, newText) -> {
             if (newText.length() < 2) {
@@ -269,7 +308,10 @@ public class RoutePlannerController {
         });
     }
 
-
+    /**
+     * (!HIÁNYOS!) összegyűjti az útvonaltervezéshez szükséges paraméterket a guiról
+     * @return {@code RouteParameters} objektum, vagy {@code null}, ha sikertelen
+     */
     private RouteParameters gatherRouteParameters() {
         RouteParameters params = new RouteParameters();
         params.departure = departureField.getText().trim();
@@ -295,6 +337,12 @@ public class RoutePlannerController {
         return params;
     }
 
+    /**
+     * lekéri a megadott megállónevekhez tartozó StopDTO objektimokat
+     * @param departure indulási név
+     * @param arrival   érkezési név
+     * @return ha mindkét megállót megtalálja visszaadja a két stopDTO-t
+     */
     private StopDTO[] resolveStops(String departure, String arrival) {
         StopDTO fromStop = stopService.getStopByName(departure);
         StopDTO toStop = stopService.getStopByName(arrival);
@@ -305,7 +353,13 @@ public class RoutePlannerController {
         return new StopDTO[]{fromStop, toStop};
     }
 
-    private void runRoutePlanningInBackground(RouteParameters params, StopDTO fromStop, StopDTO toStop) {
+    /**
+     *  Külön szálon elindítja az útvonaltervezést, majd a visszatérést feldolgozza
+     * @param params    megadott paraméterek
+     * @param fromStop  kiindulási megálló neve
+     * @param toStop    érkezési megálló neve
+     */
+    private void runRoutePlanning(RouteParameters params, StopDTO fromStop, StopDTO toStop) {
         new Thread(() -> {
             try {
                 boolean arriveBy = params.mode.equals("Érkezés");
@@ -320,16 +374,20 @@ public class RoutePlannerController {
                         arriveBy
                 );
 
-                Platform.runLater(() -> displayRouteResult(route));
+                Platform.runLater(() -> displayRoute(route));
             } catch (Exception e) {
                 e.printStackTrace();
                 Platform.runLater(() -> UIUtils.showAlert("Hiba történt az útvonaltervezés során."));
-                System.out.println("[HIBA - runRoutePlanningInBackGround]: " + e.getMessage());
+                System.out.println("[HIBA - runRoutePlanning]: " + e.getMessage());
             }
         }).start();
     }
 
-    private void displayRouteResult(TransitRoute route) {
+    /**
+     * útvonaltervezési ablak megjelenítése
+     * @param route útvonal
+     */
+    private void displayRoute(TransitRoute route) {
         if (route != null && !route.getSteps().isEmpty()) {
             RoutePlanBuilder.show(route.getSteps(), popupManager, new RouteInfoDisplayer(popupManager));
         } else {

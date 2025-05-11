@@ -9,36 +9,31 @@ import org.openapitools.client.api.DefaultApi;
 
 import java.util.List;
 /**
- * Felelős egy adott megálló indulási információinak megjelenítéséért popup ablakban.
+ * Adott megállók információaiért felelős osztály
  * <p>
  * Az adatokat a {@link DepartureService}-en keresztül tölti be, majd a {@link PopupManager}
- * segítségével jeleníti meg lebegő HTML nézetként.
+ * segítségével jeleníti meg lebegő HTML nézetként
  */
 
 public class StopInfoDisplayer {
-    /**
-     * Popup megjelenítését kezelő osztály.
-     */
 
     private final PopupManager popupManager;
     /**
-     * Indulási adatok lekérdezését végző szolgáltatás.
+     * Indulási adatok lekérdezését végző service
      */
-
     private final DepartureService departureService;
     /**
-     * Létrehozza a StopInfoDisplayer példányt.
+     * Létrehozza a StopInfoDisplayer példányt
      *
      * @param popupManager a popupok kezeléséért felelős osztály
      */
-
     public StopInfoDisplayer(PopupManager popupManager) {
         this.popupManager = popupManager;
         this.departureService = new DepartureService();
     }
     /**
-     * Lekéri az adott megállóhoz tartozó indulásokat, és megjeleníti popupként a térképen.
-     * A lekérdezés külön szálon fut, míg a megjelenítés a JavaFX UI szálon történik.
+     * Lekéri az adott megállóhoz tartozó indulásokat, és megjeleníti popupként a térképen
+     * A lekérdezés külön szálon fut,a megjelenítés UI szálon történik
      *
      * @param stopId   a megálló azonosítója
      * @param stopName a megálló neve
@@ -55,7 +50,7 @@ public class StopInfoDisplayer {
                 String html = popupManager.getStopViewBuilder().build(stopId, stopName, departures, isFavorite);
 
                 Platform.runLater(() -> {
-                    popupManager.showFloatingPopup("Megálló nézet", html);
+                    popupManager.showPopup("Megálló nézet", html);
                 });
 
             } catch (Exception e) {

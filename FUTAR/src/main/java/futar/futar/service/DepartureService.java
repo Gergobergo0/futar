@@ -20,7 +20,6 @@ public class DepartureService {
     /**
      * Konstruktor, amely inicializálja a DepartureApi példányt.
      */
-
     public DepartureService() {
         this.departureApi = new DepartureApi();
     }
@@ -84,7 +83,6 @@ public class DepartureService {
      * @param tripId a járat azonosítója
      * @return a járat neve, ha megtalálható
      */
-
     public Optional<String> getRouteNameByTripId(String tripId) {
         try {
             var response = departureApi.getTripDetails(tripId);
@@ -101,6 +99,11 @@ public class DepartureService {
         }
     }
 
+    /**
+     * visszaadja az adott járat típusát (tram, trail...)
+     * @param tripId azonosító
+     * @return az útvonal típusa {@code Optional<String>} formában, ha sikerült lekérni, különben {@code Optional.empty()}
+     */
     public Optional<String> getRouteTypeByTripId(String tripId) {
         try {
             var response = departureApi.getTripDetails(tripId);

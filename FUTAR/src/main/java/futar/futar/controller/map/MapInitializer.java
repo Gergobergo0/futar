@@ -11,16 +11,16 @@ import netscape.javascript.JSObject;
  */
 public class MapInitializer {
     /**
-     * A WebEngine, amely a HTML rendereléséért és JavaScript végrehajtásáért felel.
+     *A WebEngine ami a HTML rendereléséért és JS végrehajtásáért felel
      */
     private final WebEngine webEngine;
     /**
-     * A Java-oldali objektum, amelyet a JavaScript számára elérhetővé teszünk.
+     *A Java-oldali objektum, amelyet a JS-nek elérhetővé teszünk
      */
     private Object javaConnector;
 
     /**
-     * Létrehozza a {@code MapInitializer} példányt, és beállítja a HTML betöltését követő híd-injektálást.
+     * Létrehozza a {@code MapInitializer} példányt, és beállítja a HTML betöltését követő bridget
      *
      * @param mapView a WebView komponens, amely a térképet jeleníti meg
      */
@@ -37,10 +37,10 @@ public class MapInitializer {
     }
 
     /**
-     * JavaScript kódot hajt végre a WebView környezetében.
-     * A művelet a JavaFX UI szálon történik.
+     *JS kódot hajt végre a WebView-n
+     * UI szálon
      *
-     * @param script a futtatandó JavaScript kód
+     * @param script a futtatandó JS kód
      */
 
     public void executeScript(String script) {
@@ -48,8 +48,8 @@ public class MapInitializer {
     }
 
     /**
-     * Beállítja a Java-oldali összekötő objektumot, amelyet a JavaScript el tud majd érni.
-     * Ha a HTML már betöltődött, azonnal injektálja is.
+     * Beállítja a Java-oldali összekötő objektumot, amelyet a JS elér majd
+     * Ha a HTML már betöltődött, azonnal be is tölti
      *
      * @param connector a Java bridge objektum (pl. JavaController)
      */
@@ -64,8 +64,8 @@ public class MapInitializer {
     }
 
     /**
-     * A Java bridge injektálása a JavaScript „window” objektumába.
-     * A JavaScript így a {@code window.java} néven eléri az objektumot.
+     * A Java bridge injektálása a JavaScript window objektumába.
+     * A JS a {@code window.java} néven eléri az objektumot
      */
 
     private void injectJavaConnector() {
@@ -80,7 +80,7 @@ public class MapInitializer {
     }
     /**
      * Elindítja a térkép HTML fájljának betöltését a WebEngine segítségével.
-     * A fájl relatív útvonala: {@code /html/map.html}.
+     * A fájl útvonala: {@code /html/map.html}.
      */
 
     public void startLoad() {
