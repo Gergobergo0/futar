@@ -17,7 +17,7 @@ public class ApiClientProvider {
     /**
      * a generált api kulcs
      */
-    private static final String API_KEY = "38ff1614-fa20-40ee-bc79-5c3f5490603c";
+    private static final String API_KEY = ""; //!!!!!!!!!!!!
 
     /**
      * Létrehoz és visszaad egy {@link ApiClient}-t.

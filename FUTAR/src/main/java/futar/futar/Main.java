@@ -16,7 +16,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) throws Exception {
         FXMLLoader loader = new FXMLLoader(Main.class.getResource("/fxml/main_view.fxml"));
         Scene scene = new Scene(loader.load());
-        try {
+        /*try {
             URL iconURL = getClass().getResource("/images/FUTAR_ICON.png");
             if (iconURL != null) {
                 java.awt.Image awtImage = Toolkit.getDefaultToolkit().getImage(iconURL);
@@ -32,7 +32,7 @@ public class Main extends Application {
 
 
 
-        primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/images/FUTAR_ICON.png")));
+        primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("/images/FUTAR_ICON.png")));*/
 
         primaryStage.setTitle("FUTÁR");
         primaryStage.setScene(scene);
